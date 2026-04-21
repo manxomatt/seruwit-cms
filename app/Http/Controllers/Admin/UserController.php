@@ -7,13 +7,19 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\AccountManager\ProvisionAccountManagerRecord;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private readonly ProvisionAccountManagerRecord $provisionAccountManager,
+    ) {}
+
     /**
      * Get the route prefix for this controller.
      */
@@ -80,6 +86,7 @@ class UserController extends Controller
 
         if (isset($validated['roles'])) {
             $user->syncRoles($validated['roles']);
+            $this->provisionAccountManagerIfNeeded($user, $validated['roles']);
         }
 
         // Create user profile if any profile data is provided
@@ -149,6 +156,7 @@ class UserController extends Controller
 
         if (isset($validated['roles'])) {
             $user->syncRoles($validated['roles']);
+            $this->provisionAccountManagerIfNeeded($user, $validated['roles']);
         }
 
         // Update or create user profile
@@ -164,6 +172,24 @@ class UserController extends Controller
 
         return redirect()->route($this->getRoutePrefix().'.users.index')
             ->with('success', 'User updated successfully.');
+    }
+
+    /**
+     * Provision an AccountManager record for the user if the account_manager
+     * role is among the assigned roles and the record does not yet exist.
+     *
+     * @param  array<int>  $roleIds
+     */
+    private function provisionAccountManagerIfNeeded(User $user, array $roleIds): void
+    {
+        $isAccountManager = Role::query()
+            ->whereIn('id', $roleIds)
+            ->where('slug', 'account_manager')
+            ->exists();
+
+        if ($isAccountManager) {
+            DB::transaction(fn () => $this->provisionAccountManager->execute($user->fresh()));
+        }
     }
 
     /**
