@@ -1,1 +1,0 @@
-import{a as u}from"./app-qtW5tLM0.js";function f(){const e=u().props.route_prefix||"admin";return{routePrefix:e,prefixedRoute:(r,t)=>{const o=`${e}.${r}`;return t!==void 0?route(o,t):route(o)},isCurrentRoute:r=>route().current(`${e}.${r}`)??!1}}export{f as u};

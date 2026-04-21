@@ -3,6 +3,7 @@
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\External\DashboardController as ExternalDashboardController;
 use App\Http\Controllers\LiveUpdateController;
+use App\Http\Controllers\Module\AccountManagerController as ModuleAccountManagerController;
 use App\Http\Controllers\Module\AnalyticsController as ModuleAnalyticsController;
 use App\Http\Controllers\Module\CarouselController as ModuleCarouselController;
 use App\Http\Controllers\Module\CarouselImageController as ModuleCarouselImageController;
@@ -118,6 +119,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/roles/{role}/edit', [ModuleRoleController::class, 'edit'])->middleware('permission:roles,update')->name('roles.edit');
         Route::patch('/roles/{role}', [ModuleRoleController::class, 'update'])->middleware('permission:roles,update')->name('roles.update');
         Route::delete('/roles/{role}', [ModuleRoleController::class, 'destroy'])->middleware('permission:roles,delete')->name('roles.destroy');
+
+        // Account Manager Routes
+        Route::get('/account-managers', [ModuleAccountManagerController::class, 'index'])->middleware('permission:users,view')->name('account-managers.index');
+        Route::get('/account-managers/create', [ModuleAccountManagerController::class, 'create'])->middleware('permission:users,create')->name('account-managers.create');
+        Route::post('/account-managers', [ModuleAccountManagerController::class, 'store'])->middleware('permission:users,create')->name('account-managers.store');
+        Route::get('/account-managers/{accountManager}', [ModuleAccountManagerController::class, 'show'])->middleware('permission:users,view')->name('account-managers.show');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

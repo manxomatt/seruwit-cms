@@ -235,6 +235,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasOne<AccountManager, $this>
+     */
+    public function accountManager(): HasOne
+    {
+        return $this->hasOne(AccountManager::class);
+    }
+
+    /**
      * Get the primary role for the user.
      * Priority: admin > user > first custom role
      */
