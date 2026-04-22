@@ -41,6 +41,11 @@ class UserRepository implements UserRepositoryInterface
                 $updateValues,
             );
 
+            // Ensure existing external users are always verified on login.
+            if (! $user->hasVerifiedEmail()) {
+                $user->markEmailAsVerified();
+            }
+
             $this->syncRole($user, $data->role);
 
             return $user;

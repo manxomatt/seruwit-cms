@@ -109,6 +109,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/users/{user}', [ModuleUserController::class, 'show'])->middleware('permission:users,view')->name('users.show');
         Route::get('/users/{user}/edit', [ModuleUserController::class, 'edit'])->middleware('permission:users,update')->name('users.edit');
         Route::patch('/users/{user}', [ModuleUserController::class, 'update'])->middleware('permission:users,update')->name('users.update');
+        Route::patch('/users/{user}/verify', [ModuleUserController::class, 'verify'])->middleware('permission:users,update')->name('users.verify');
         Route::delete('/users/{user}', [ModuleUserController::class, 'destroy'])->middleware('permission:users,delete')->name('users.destroy');
 
         // Module Role Management Routes

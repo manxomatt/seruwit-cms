@@ -148,6 +148,40 @@ class DualAuthenticationTest extends TestCase
             'username' => 'newexternaluser',
             'status' => 'active',
         ]);
+
+        $newUser = User::query()->where('email', 'newexternal@example.com')->first();
+        $this->assertNotNull($newUser->email_verified_at, 'Newly synced external user should be auto-verified.');
+    }
+
+    public function test_external_authentication_works_when_email_used_as_username_and_user_not_in_local_db(): void
+    {
+        // Some external accounts use their email as their username.
+        // When a first-time user logs in with their email and is not yet in local DB,
+        // the email itself should be forwarded as the "username" field to the external API.
+        $this->seed(RoleSeeder::class);
+
+        Http::fake([
+            '*/auth/login' => Http::response($this->apiResponse([
+                'user' => [
+                    'id' => 42,
+                    'username' => 'user@example.com',
+                    'email' => 'user@example.com',
+                    'role' => 'manager',
+                    'status' => 'true',
+                ],
+            ]), 200),
+        ]);
+
+        $this->post('/login', [
+            'login' => 'user@example.com',
+            'password' => 'any-password',
+        ]);
+
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('users', [
+            'email' => 'user@example.com',
+            'external_id' => '42',
+        ]);
     }
 
     /**
@@ -208,6 +242,34 @@ class DualAuthenticationTest extends TestCase
         ]);
 
         $this->assertEquals($originalPasswordHash, $existingUser->fresh()->password);
+    }
+
+    public function test_external_authentication_verifies_existing_unverified_user_on_login(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $existingUser = User::factory()->unverified()->create([
+            'username' => 'unverifiedexternal',
+            'email' => 'unverified@example.com',
+        ]);
+
+        $this->assertNull($existingUser->email_verified_at);
+
+        Http::fake([
+            '*/auth/login' => Http::response($this->apiResponse([
+                'user' => ['id' => 77, 'username' => 'unverifiedexternal', 'email' => 'unverified@example.com'],
+            ]), 200),
+        ]);
+
+        $this->post('/login', [
+            'login' => 'unverifiedexternal',
+            'password' => 'any-password',
+        ]);
+
+        $this->assertNotNull(
+            $existingUser->fresh()->email_verified_at,
+            'Existing external user should be auto-verified on login.'
+        );
     }
 
     public function test_external_authentication_sets_external_id_on_sync(): void

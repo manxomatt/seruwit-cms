@@ -266,9 +266,13 @@ export default function Index({ users, filters }: Props): JSX.Element {
                                                             Verified
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                        <button
+                                                            onClick={() => router.patch(prefixedRoute('users.verify', user.id))}
+                                                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors cursor-pointer"
+                                                            title="Click to verify"
+                                                        >
                                                             Unverified
-                                                        </span>
+                                                        </button>
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

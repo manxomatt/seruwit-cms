@@ -64,20 +64,16 @@ class LoginAction
         // - Login with email     → look up username from local DB first;
         //                          fall back to the name column for users synced
         //                          before the username column was added.
+        //                          If still not found (first-time external user),
+        //                          use the email itself as the username since some
+        //                          external accounts use their email as username.
         $usernameForApi = $isEmail
             ? (
                 \App\Models\User::query()->where('email', $login)->value('username')
                 ?? \App\Models\User::query()->where('email', $login)->value('name')
+                ?? $login
             )
             : $login;
-
-        if ($usernameForApi === null) {
-            RateLimiter::hit($throttleKey);
-
-            throw ValidationException::withMessages([
-                'login' => trans('auth.failed'),
-            ]);
-        }
 
         $externalUserData = $this->externalAuthService->authenticate($usernameForApi, $password, 'username');
 

@@ -31,8 +31,16 @@ class ExternalAuthService
                 return null;
             }
 
-            /** @var array<string, mixed> $data */
             $data = $response->json();
+
+            if (! is_array($data)) {
+                Log::warning('External API returned non-JSON or empty response', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return null;
+            }
 
             if (! $this->hasRequiredFields($data)) {
                 Log::warning('External API response missing required fields', [

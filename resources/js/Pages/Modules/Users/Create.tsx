@@ -39,12 +39,8 @@ export default function Create({ roles }: Props): JSX.Element {
         post(prefixedRoute('users.store'));
     };
 
-    const toggleRole = (roleId: number) => {
-        if (data.roles.includes(roleId)) {
-            setData('roles', data.roles.filter(id => id !== roleId));
-        } else {
-            setData('roles', [...data.roles, roleId]);
-        }
+    const selectRole = (roleId: number) => {
+        setData('roles', [roleId]);
     };
 
     return (
@@ -185,18 +181,19 @@ export default function Create({ roles }: Props): JSX.Element {
 
                             {/* Right Column - Roles */}
                             <div>
-                                <InputLabel value="Roles" />
-                                <div className="mt-2 border rounded-lg divide-y max-h-[300px] overflow-y-auto">
+                                <InputLabel value="Role" />
+                                <div className="mt-2 border rounded-lg divide-y">
                                     {roles.map((role) => (
                                         <label
                                             key={role.id}
                                             className="flex items-start p-3 cursor-pointer hover:bg-gray-50"
                                         >
                                             <input
-                                                type="checkbox"
-                                                checked={data.roles.includes(role.id)}
-                                                onChange={() => toggleRole(role.id)}
-                                                className="mt-1 rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                                                type="radio"
+                                                name="role"
+                                                checked={data.roles[0] === role.id}
+                                                onChange={() => selectRole(role.id)}
+                                                className="mt-1 border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
                                             />
                                             <div className="ml-3">
                                                 <div className="flex items-center gap-2">
@@ -219,9 +216,6 @@ export default function Create({ roles }: Props): JSX.Element {
                                     ))}
                                 </div>
                                 <InputError message={errors.roles} className="mt-2" />
-                                <p className="mt-2 text-sm text-gray-500">
-                                    Selected: {data.roles.length} role(s)
-                                </p>
                             </div>
                         </div>
 

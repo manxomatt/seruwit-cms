@@ -63,7 +63,7 @@ class UserController extends Controller
      */
     public function create(): Response
     {
-        $roles = Role::query()->orderBy('name')->get();
+        $roles = Role::query()->orderBy('id')->get();
 
         return Inertia::render('Modules/Users/Create', [
             'roles' => $roles,
@@ -126,7 +126,7 @@ class UserController extends Controller
     public function edit(User $user): Response
     {
         $user->load(['roles', 'profile']);
-        $roles = Role::query()->orderBy('name')->get();
+        $roles = Role::query()->orderBy('id')->get();
 
         return Inertia::render('Modules/Users/Edit', [
             'user' => $user,
@@ -190,6 +190,17 @@ class UserController extends Controller
         if ($isAccountManager) {
             DB::transaction(fn () => $this->provisionAccountManager->execute($user->fresh()));
         }
+    }
+
+    /**
+     * Mark the user's email as verified.
+     */
+    public function verify(User $user): RedirectResponse
+    {
+        $user->markEmailAsVerified();
+
+        return redirect()->back()
+            ->with('success', "User {$user->name} has been verified.");
     }
 
     /**
