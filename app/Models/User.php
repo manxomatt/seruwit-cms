@@ -243,6 +243,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasOne<ReferralRelation, $this>
+     */
+    public function referralRelation(): HasOne
+    {
+        return $this->hasOne(ReferralRelation::class);
+    }
+
+    /**
      * Get the primary role for the user.
      * Priority: admin > user > first custom role
      */

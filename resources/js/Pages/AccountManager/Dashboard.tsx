@@ -33,6 +33,8 @@ interface Stats {
     total_commissions: number;
     pending_commissions: number;
     paid_commissions: number;
+    downlines_count: number;
+    pending_downlines: number;
 }
 
 interface Props {
@@ -253,6 +255,45 @@ export default function Dashboard({ user, primaryRole, accountManager, stats }: 
                             icon={<ChartBarIcon />}
                             color="rose"
                         />
+                    </div>
+                )}
+
+                {/* Downlines quick access */}
+                {stats && (
+                    <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-900/5">
+                        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                            <div>
+                                <h3 className="text-base font-semibold text-gray-900">Downline</h3>
+                                <p className="mt-0.5 text-sm text-gray-500">
+                                    {stats.downlines_count} disetujui
+                                    {stats.pending_downlines > 0 && (
+                                        <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                                            {stats.pending_downlines} menunggu
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+                            <Link
+                                href={route('account-manager.downlines.index')}
+                                className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-700"
+                            >
+                                Lihat Semua
+                            </Link>
+                        </div>
+                        <div className="flex gap-4 px-6 py-4">
+                            <Link
+                                href={route('account-manager.downlines.create')}
+                                className="flex-1 rounded-lg border border-dashed border-gray-300 px-4 py-3 text-center text-sm text-gray-500 hover:border-cyan-400 hover:text-cyan-600"
+                            >
+                                + Buat Downline Baru
+                            </Link>
+                            <Link
+                                href={route('account-manager.downlines.assign')}
+                                className="flex-1 rounded-lg border border-dashed border-gray-300 px-4 py-3 text-center text-sm text-gray-500 hover:border-cyan-400 hover:text-cyan-600"
+                            >
+                                + Request Assign User
+                            </Link>
+                        </div>
                     </div>
                 )}
 

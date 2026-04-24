@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\AccountManager\DashboardController as AccountManagerDashboardController;
+use App\Http\Controllers\AccountManager\DownlineAssignmentController as AccountManagerDownlineAssignmentController;
+use App\Http\Controllers\AccountManager\DownlineController as AccountManagerDownlineController;
+use App\Http\Controllers\Admin\ReferralApprovalController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\External\DashboardController as ExternalDashboardController;
 use App\Http\Controllers\External\UserController as ExternalUserController;
@@ -41,6 +44,15 @@ Route::get('/external/dashboard', [ExternalDashboardController::class, 'index'])
 Route::get('/account-manager/dashboard', [AccountManagerDashboardController::class, 'index'])
     ->middleware(['auth', 'account.manager'])
     ->name('account-manager.dashboard');
+
+// Account Manager – Downlines
+Route::prefix('account-manager/downlines')->name('account-manager.downlines.')->middleware(['auth', 'account.manager'])->group(function () {
+    Route::get('/', [AccountManagerDownlineController::class, 'index'])->name('index');
+    Route::get('/create', [AccountManagerDownlineController::class, 'create'])->name('create');
+    Route::post('/', [AccountManagerDownlineController::class, 'store'])->name('store');
+    Route::get('/assign', [AccountManagerDownlineAssignmentController::class, 'create'])->name('assign');
+    Route::post('/assign', [AccountManagerDownlineAssignmentController::class, 'store'])->name('assign.store');
+});
 
 // External API – user list (external_super_admin only)
 Route::get('/external/users', [ExternalUserController::class, 'index'])
@@ -138,6 +150,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/account-managers/create', [ModuleAccountManagerController::class, 'create'])->middleware('permission:users,create')->name('account-managers.create');
         Route::post('/account-managers', [ModuleAccountManagerController::class, 'store'])->middleware('permission:users,create')->name('account-managers.store');
         Route::get('/account-managers/{accountManager}', [ModuleAccountManagerController::class, 'show'])->middleware('permission:users,view')->name('account-managers.show');
+        Route::get('/account-managers/{accountManager}/assign-downline', [ReferralApprovalController::class, 'assignDownline'])->middleware('permission:users,create')->name('account-managers.assign-downline');
+        Route::post('/account-managers/{accountManager}/assign-downline', [ReferralApprovalController::class, 'storeDownlineAssignment'])->middleware('permission:users,create')->name('account-managers.assign-downline.store');
+
+        // Referral Approval Routes (admin)
+        Route::get('/referral-approvals', [ReferralApprovalController::class, 'index'])->middleware('permission:users,view')->name('referral-approvals.index');
+        Route::post('/referral-approvals/{referralRelation}/approve', [ReferralApprovalController::class, 'approve'])->middleware('permission:users,update')->name('referral-approvals.approve');
+        Route::post('/referral-approvals/{referralRelation}/reject', [ReferralApprovalController::class, 'reject'])->middleware('permission:users,update')->name('referral-approvals.reject');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

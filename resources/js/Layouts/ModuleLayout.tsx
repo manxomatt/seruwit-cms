@@ -278,6 +278,17 @@ export default function ModuleLayout({ header, children }: Props) {
             });
         }
 
+        // Account Manager: add downline management
+        if (user.primary_role_slug === 'account_manager' && routeExists('account-manager.downlines.index')) {
+            items.push({
+                name: 'Downline',
+                href: route('account-manager.downlines.index'),
+                icon: <UsersIcon />,
+                current: route().current('account-manager.downlines.*'),
+                module: 'downlines',
+            });
+        }
+
         return items;
     }, [user]);
 

@@ -26,6 +26,8 @@ class DashboardController extends Controller
                 'total_commissions' => $accountManager->commissions()->count(),
                 'pending_commissions' => $accountManager->commissions()->where('status', 'pending')->count(),
                 'paid_commissions' => $accountManager->commissions()->where('status', 'paid')->count(),
+                'downlines_count' => $accountManager->referralRelations()->approved()->count(),
+                'pending_downlines' => $accountManager->referralRelations()->pending()->count(),
             ];
         }
 
