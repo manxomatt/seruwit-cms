@@ -240,7 +240,7 @@ export default function ModuleLayout({ header, children }: Props) {
                 name: 'Dashboard',
                 href: dashboardRoute,
                 icon: <DashboardIcon />,
-                current: route().current('module.dashboard') || route().current('dashboard'),
+                current: route().current('module.dashboard') || route().current('dashboard') || route().current('account-manager.dashboard'),
                 module: 'dashboard',
             },
         ];

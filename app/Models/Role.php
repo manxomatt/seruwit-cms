@@ -16,6 +16,7 @@ class Role extends Model
     public const DEFAULT_DASHBOARD_PATHS = [
         'admin' => '/module/dashboard',
         'user' => '/module/dashboard',
+        'account_manager' => '/account-manager/dashboard',
     ];
 
     /**

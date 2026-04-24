@@ -46,13 +46,13 @@ class RoleSeeder extends Seeder
         $userRole->permissions()->sync($viewPermissions->pluck('id')->toArray());
 
         // Account Manager role – local users who manage referrals and commissions.
-        $accountManagerRole = Role::query()->firstOrCreate(
+        $accountManagerRole = Role::query()->updateOrCreate(
             ['slug' => 'account_manager'],
             [
                 'name' => 'Account Manager',
                 'description' => 'Manages referrals and commissions in the billing system',
                 'is_system' => true,
-                'dashboard_path' => '/module/dashboard',
+                'dashboard_path' => '/account-manager/dashboard',
             ]
         );
         // Account managers have view-only access to CMS content modules.

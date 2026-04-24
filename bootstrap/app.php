@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'not.external' => \App\Http\Middleware\EnsureNotExternalUser::class,
             'external.super_admin' => \App\Http\Middleware\EnsureExternalSuperAdmin::class,
+            'account.manager' => \App\Http\Middleware\EnsureAccountManager::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

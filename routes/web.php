@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountManager\DashboardController as AccountManagerDashboardController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\External\DashboardController as ExternalDashboardController;
 use App\Http\Controllers\External\UserController as ExternalUserController;
@@ -35,6 +36,11 @@ Route::get('/dashboard', [ModuleDashboardController::class, 'index'])
 Route::get('/external/dashboard', [ExternalDashboardController::class, 'index'])
     ->middleware(['auth'])
     ->name('external.dashboard');
+
+// Account Manager dashboard
+Route::get('/account-manager/dashboard', [AccountManagerDashboardController::class, 'index'])
+    ->middleware(['auth', 'account.manager'])
+    ->name('account-manager.dashboard');
 
 // External API – user list (external_super_admin only)
 Route::get('/external/users', [ExternalUserController::class, 'index'])
