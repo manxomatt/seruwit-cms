@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\External\DashboardController as ExternalDashboardController;
+use App\Http\Controllers\External\UserController as ExternalUserController;
 use App\Http\Controllers\LiveUpdateController;
 use App\Http\Controllers\Module\AccountManagerController as ModuleAccountManagerController;
 use App\Http\Controllers\Module\AnalyticsController as ModuleAnalyticsController;
@@ -34,6 +35,11 @@ Route::get('/dashboard', [ModuleDashboardController::class, 'index'])
 Route::get('/external/dashboard', [ExternalDashboardController::class, 'index'])
     ->middleware(['auth'])
     ->name('external.dashboard');
+
+// External API – user list (external_super_admin only)
+Route::get('/external/users', [ExternalUserController::class, 'index'])
+    ->middleware(['auth', 'external.super_admin'])
+    ->name('external.users.index');
 
 Route::middleware('auth')->group(function () {
     // Module Routes - Local CMS users only; external API users are redirected.

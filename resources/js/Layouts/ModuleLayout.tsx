@@ -19,6 +19,7 @@ interface User {
     email_verified_at: string | null;
     is_admin: boolean;
     dashboard_path: string;
+    primary_role_slug: string | null;
     profile: UserProfile | null;
     permissions: Record<string, string[]>;
 }
@@ -265,6 +266,17 @@ export default function ModuleLayout({ header, children }: Props) {
                 });
             }
         });
+
+        // External super admin: add users list from external API
+        if (user.primary_role_slug === 'external_super_admin' && routeExists('external.users.index')) {
+            items.push({
+                name: 'Users',
+                href: route('external.users.index'),
+                icon: <UsersIcon />,
+                current: route().current('external.users.*'),
+                module: 'external-users',
+            });
+        }
 
         return items;
     }, [user]);
