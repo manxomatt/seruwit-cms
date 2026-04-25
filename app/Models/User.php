@@ -28,6 +28,7 @@ class User extends Authenticatable
         'external_id',
         'status',
         'last_login_at',
+        'email_verified_at',
     ];
 
     /**

@@ -97,6 +97,33 @@ class ExternalApiService
         return $client;
     }
 
+    /**
+     * Build an HTTP client with API key authentication (for public endpoints).
+     */
+    private function clientWithApiKey(): PendingRequest
+    {
+        $apiKey = (string) config('services.external_api.key');
+
+        return Http::timeout($this->timeout())
+            ->acceptJson()
+            ->withHeaders([
+                'X-Api-Key' => $apiKey,
+            ]);
+    }
+
+    /**
+     * Get users from the external API with optional role filter.
+     *
+     * @param  array<string>  $roles
+     */
+    public function getUsers(array $roles = ['manager', 'user']): Response
+    {
+        return $this->clientWithApiKey()->get(
+            $this->url('users_api'),
+            ['role' => implode(',', $roles)]
+        );
+    }
+
     private function url(string $path): string
     {
         return rtrim((string) config('services.external_api.url'), '/').'/'.ltrim($path, '/');

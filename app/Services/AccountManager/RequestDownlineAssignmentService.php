@@ -33,6 +33,7 @@ class RequestDownlineAssignmentService
 
         return ReferralRelation::create([
             'account_manager_id' => $accountManager->id,
+            'external_manager_id' => $user->external_id,
             'user_id' => $user->id,
             'referral_code' => $accountManager->referral_code,
             'status' => ReferralRelation::STATUS_PENDING,

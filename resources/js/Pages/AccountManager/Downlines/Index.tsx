@@ -1,5 +1,5 @@
 import DynamicLayout from '@/Layouts/DynamicLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
 
 interface UserProfile {
@@ -81,6 +81,7 @@ const UserPlusIcon = () => (
 
 export default function Index({ downlines, pendingCount, filters }: Props): JSX.Element {
     const [search, setSearch] = useState(filters.search ?? '');
+    const { flash } = usePage<{ flash: { error?: string; success?: string } }>().props;
 
     const handleSearch: FormEventHandler = (e) => {
         e.preventDefault();
@@ -102,6 +103,16 @@ export default function Index({ downlines, pendingCount, filters }: Props): JSX.
             <Head title="Downline Saya" />
 
             <div className="space-y-6">
+                {flash?.error && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                        {flash.error}
+                    </div>
+                )}
+                {flash?.success && (
+                    <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                        {flash.success}
+                    </div>
+                )}
                 {/* Action bar */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <form onSubmit={handleSearch} className="flex gap-2">

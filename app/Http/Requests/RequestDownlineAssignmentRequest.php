@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use App\Models\ReferralRelation;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class RequestDownlineAssignmentRequest extends FormRequest
 {
@@ -22,10 +21,10 @@ class RequestDownlineAssignmentRequest extends FormRequest
             'user_id' => [
                 'required',
                 'integer',
-                Rule::exists('users', 'id'),
+                // No exists check needed - user will be synced from external API if needed
                 function (string $attribute, mixed $value, \Closure $fail): void {
                     $exists = ReferralRelation::query()
-                        ->where('user_id', $value)
+                        ->whereHas('user', fn ($q) => $q->where('external_id', $value))
                         ->whereIn('status', [ReferralRelation::STATUS_PENDING, ReferralRelation::STATUS_APPROVED])
                         ->exists();
 
@@ -34,6 +33,7 @@ class RequestDownlineAssignmentRequest extends FormRequest
                     }
                 },
             ],
+            'user_data' => ['nullable', 'json'],
         ];
     }
 

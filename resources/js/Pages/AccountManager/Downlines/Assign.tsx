@@ -1,5 +1,5 @@
 import DynamicLayout from '@/Layouts/DynamicLayout';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
 
 interface AssignableUser {
@@ -7,6 +7,9 @@ interface AssignableUser {
     name: string;
     email: string;
     username: string | null;
+    role: string;
+    status: string;
+    manager_id: number;
 }
 
 interface PaginationLink {
@@ -26,6 +29,7 @@ interface PaginatedUsers {
 interface Props {
     users: PaginatedUsers;
     filters: { search: string | null };
+    error?: string;
 }
 
 const ArrowLeftIcon = () => (
@@ -34,8 +38,11 @@ const ArrowLeftIcon = () => (
     </svg>
 );
 
-const AssignButton = ({ userId }: { userId: number }) => {
-    const { post, processing, errors } = useForm({ user_id: userId });
+const AssignButton = ({ user }: { user: AssignableUser }) => {
+    const { post, processing, errors } = useForm({ 
+        user_id: user.id,
+        user_data: JSON.stringify(user),
+    });
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -56,8 +63,10 @@ const AssignButton = ({ userId }: { userId: number }) => {
     );
 };
 
-export default function Assign({ users, filters }: Props): JSX.Element {
+export default function Assign({ users, filters, error }: Props): JSX.Element {
     const [search, setSearch] = useState(filters.search ?? '');
+    const { flash } = usePage<{ flash: { error?: string; success?: string } }>().props;
+    const displayError = flash?.error ?? error;
 
     const handleSearch: FormEventHandler = (e) => {
         e.preventDefault();
@@ -83,6 +92,12 @@ export default function Assign({ users, filters }: Props): JSX.Element {
             <Head title="Request Assign User" />
 
             <div className="space-y-6">
+                {displayError && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                        {displayError}
+                    </div>
+                )}
+
                 <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
                     Pilih user yang ingin Anda jadikan downline. Pengajuan akan menunggu persetujuan admin.
                 </div>
@@ -115,6 +130,7 @@ export default function Assign({ users, filters }: Props): JSX.Element {
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Nama</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Username</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Role</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Aksi</th>
                                 </tr>
                             </thead>
@@ -124,8 +140,9 @@ export default function Assign({ users, filters }: Props): JSX.Element {
                                         <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.name}</td>
                                         <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
                                         <td className="px-6 py-4 text-sm text-gray-500">{user.username ?? '—'}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-500 capitalize">{user.role}</td>
                                         <td className="px-6 py-4 text-right">
-                                            <AssignButton userId={user.id} />
+                                            <AssignButton user={user} />
                                         </td>
                                     </tr>
                                 ))}
