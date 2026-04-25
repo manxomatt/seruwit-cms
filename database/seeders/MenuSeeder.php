@@ -93,6 +93,24 @@ class MenuSeeder extends Seeder
                 'permission_action' => 'view',
                 'sort_order' => 9,
             ],
+            [
+                'name' => 'Account Managers',
+                'slug' => 'account-managers',
+                'icon' => 'users',
+                'route_name' => 'account-managers.index',
+                'permission_module' => 'users',
+                'permission_action' => 'view',
+                'sort_order' => 10,
+            ],
+            [
+                'name' => 'Referral Approvals',
+                'slug' => 'referral-approvals',
+                'icon' => 'users',
+                'route_name' => 'referral-approvals.index',
+                'permission_module' => 'users',
+                'permission_action' => 'view',
+                'sort_order' => 11,
+            ],
         ];
 
         foreach ($menus as $menuData) {

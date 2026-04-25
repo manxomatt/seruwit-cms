@@ -267,6 +267,28 @@ export default function ModuleLayout({ header, children }: Props) {
             }
         });
 
+        // Add Account Managers and Referral Approvals for users with users:view permission
+        if (permissions['users']?.includes('view')) {
+            if (routeExists('module.account-managers.index')) {
+                items.push({
+                    name: 'Account Managers',
+                    href: route('module.account-managers.index'),
+                    icon: <UsersIcon />,
+                    current: route().current('module.account-managers.*'),
+                    module: 'account-managers',
+                });
+            }
+            if (routeExists('module.referral-approvals.index')) {
+                items.push({
+                    name: 'Referral Approvals',
+                    href: route('module.referral-approvals.index'),
+                    icon: <UsersIcon />,
+                    current: route().current('module.referral-approvals.*'),
+                    module: 'referral-approvals',
+                });
+            }
+        }
+
         // External super admin: add users list from external API
         if (user.primary_role_slug === 'external_super_admin' && routeExists('external.users.index')) {
             items.push({

@@ -1,5 +1,5 @@
 import DynamicLayout from '@/Layouts/DynamicLayout';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
 
 interface AccountManager {
@@ -150,6 +150,7 @@ const ApproveButton = ({ relation }: { relation: ReferralRelation }) => {
 export default function Index({ referralRelations, filters }: Props): JSX.Element {
     const [search, setSearch] = useState(filters.search ?? '');
     const [rejectTarget, setRejectTarget] = useState<ReferralRelation | null>(null);
+    const { flash } = usePage<{ flash: { success?: string; error?: string } }>().props;
 
     const handleSearch: FormEventHandler = (e) => {
         e.preventDefault();
@@ -172,6 +173,18 @@ export default function Index({ referralRelations, filters }: Props): JSX.Elemen
 
             {rejectTarget && (
                 <RejectModal relation={rejectTarget} onClose={() => setRejectTarget(null)} />
+            )}
+
+            {flash.success && (
+                <div className="rounded-lg bg-green-50 p-4 text-sm text-green-700 ring-1 ring-green-200">
+                    {flash.success}
+                </div>
+            )}
+
+            {flash.error && (
+                <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-200">
+                    {flash.error}
+                </div>
             )}
 
             <div className="space-y-6">
