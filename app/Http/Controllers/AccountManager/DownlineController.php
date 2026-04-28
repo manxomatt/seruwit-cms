@@ -8,6 +8,7 @@ use App\Models\ReferralRelation;
 use App\Services\AccountManager\CreateDownlineService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -60,6 +61,12 @@ class DownlineController extends Controller
         $accountManager = $request->user()->accountManager;
 
         if ($accountManager === null || $accountManager->status !== 'active') {
+            Log::channel('downline')->warning('Percobaan buat downline oleh AM tidak aktif', [
+                'user_id' => $request->user()->id,
+                'account_manager_id' => $accountManager?->id,
+                'account_manager_status' => $accountManager?->status,
+            ]);
+
             return redirect()
                 ->route('account-manager.downlines.index')
                 ->with('error', 'Akun Account Manager tidak aktif.');
@@ -70,7 +77,12 @@ class DownlineController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             throw $e;
         } catch (\RuntimeException $e) {
-            return back()->withErrors(['external' => $e->getMessage()]);
+            Log::channel('downline')->error('RuntimeException saat membuat downline', [
+                'account_manager_id' => $accountManager->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', $e->getMessage());
         }
 
         return redirect()

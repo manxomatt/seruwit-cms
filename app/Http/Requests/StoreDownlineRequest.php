@@ -21,7 +21,7 @@ class StoreDownlineRequest extends FormRequest
             'username' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'password' => ['required', 'string', Password::defaults()],
-            'role' => ['required', 'string', 'in:external_user,external_manager'],
+            'role' => ['required', 'string', 'in:user,manager'],
         ];
     }
 

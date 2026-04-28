@@ -35,6 +35,14 @@ interface Commission {
     created_at: string;
 }
 
+interface ReferralRelation {
+    id: number;
+    status: string;
+    referral_code: string;
+    created_at: string;
+    user: User;
+}
+
 interface AccountManager {
     id: number;
     referral_code: string;
@@ -45,6 +53,7 @@ interface AccountManager {
     user: User;
     wallet_transactions: WalletTransaction[];
     commissions: Commission[];
+    referral_relations: ReferralRelation[];
 }
 
 interface Props {
@@ -63,16 +72,24 @@ export default function Show({ accountManager }: Props): JSX.Element {
     return (
         <DynamicLayout
             header={
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href={route('module.account-managers.index')}
+                            className="inline-flex items-center justify-center rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 transition-colors"
+                        >
+                            <ArrowLeftIcon />
+                        </Link>
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                            Account Manager Detail
+                        </h1>
+                    </div>
                     <Link
-                        href={route('module.account-managers.index')}
-                        className="inline-flex items-center justify-center rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 transition-colors"
+                        href={route('module.account-managers.assign-downline', { accountManager: accountManager.id })}
+                        className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-700"
                     >
-                        <ArrowLeftIcon />
+                        Assign Downline
                     </Link>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-                        Account Manager Detail
-                    </h1>
                 </div>
             }
         >
@@ -142,6 +159,43 @@ export default function Show({ accountManager }: Props): JSX.Element {
                                         <td className="py-3 text-sm text-gray-900">{parseFloat(tx.balance_after).toLocaleString('id-ID')}</td>
                                         <td className="py-3 text-sm text-gray-500">{tx.description ?? '-'}</td>
                                         <td className="py-3 text-sm text-gray-500">{new Date(tx.created_at).toLocaleDateString('id-ID')}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+
+                {/* Downline Users */}
+                <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-900/5 p-6">
+                    <h2 className="text-base font-semibold text-gray-900 mb-4">Downline Users ({accountManager.referral_relations.length})</h2>
+                    {accountManager.referral_relations.length === 0 ? (
+                        <p className="text-sm text-gray-500">Belum ada downline.</p>
+                    ) : (
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th className="pb-2 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                                    <th className="pb-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                    <th className="pb-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th className="pb-2 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {accountManager.referral_relations.map((rel) => (
+                                    <tr key={rel.id}>
+                                        <td className="py-3 text-sm font-medium text-gray-900">{rel.user.profile?.full_name ?? rel.user.name}</td>
+                                        <td className="py-3 text-sm text-gray-500">{rel.user.email}</td>
+                                        <td className="py-3">
+                                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                                                rel.status === 'approved' ? 'bg-green-100 text-green-800'
+                                                : rel.status === 'pending' ? 'bg-yellow-100 text-yellow-800'
+                                                : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                {rel.status === 'approved' ? 'Disetujui' : rel.status === 'pending' ? 'Menunggu' : 'Ditolak'}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 text-sm text-gray-500">{new Date(rel.created_at).toLocaleDateString('id-ID')}</td>
                                     </tr>
                                 ))}
                             </tbody>

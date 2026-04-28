@@ -72,6 +72,7 @@ class AccountManagerController extends Controller
             'user.profile',
             'walletTransactions' => fn ($q) => $q->latest()->limit(20),
             'commissions' => fn ($q) => $q->latest()->limit(20),
+            'referralRelations' => fn ($q) => $q->with('user.profile')->latest(),
         ]);
 
         return Inertia::render('Module/AccountManagers/Show', [

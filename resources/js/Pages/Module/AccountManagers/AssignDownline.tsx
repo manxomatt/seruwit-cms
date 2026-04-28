@@ -1,5 +1,5 @@
 import DynamicLayout from '@/Layouts/DynamicLayout';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
 
 interface AccountManager {
@@ -13,7 +13,9 @@ interface PendingUser {
     name: string;
     email: string;
     username: string | null;
+    role: string;
     status: string;
+    manager_id: number;
 }
 
 interface PaginationLink {
@@ -34,6 +36,7 @@ interface Props {
     accountManager: AccountManager;
     users: PaginatedUsers;
     filters: { search: string | null };
+    error?: string;
 }
 
 const ArrowLeftIcon = () => (
@@ -42,8 +45,11 @@ const ArrowLeftIcon = () => (
     </svg>
 );
 
-const AssignButton = ({ userId, accountManagerId }: { userId: number; accountManagerId: number }) => {
-    const { post, processing, errors } = useForm({ user_id: userId });
+const AssignButton = ({ user, accountManagerId }: { user: PendingUser; accountManagerId: number }) => {
+    const { post, processing, errors } = useForm({
+        user_id: user.id,
+        user_data: JSON.stringify(user),
+    });
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -64,8 +70,9 @@ const AssignButton = ({ userId, accountManagerId }: { userId: number; accountMan
     );
 };
 
-export default function AssignDownline({ accountManager, users, filters }: Props): JSX.Element {
+export default function AssignDownline({ accountManager, users, filters, error }: Props): JSX.Element {
     const [search, setSearch] = useState(filters.search ?? '');
+    const { flash } = usePage<{ flash: { success?: string; error?: string } }>().props;
 
     const handleSearch: FormEventHandler = (e) => {
         e.preventDefault();
@@ -102,6 +109,20 @@ export default function AssignDownline({ accountManager, users, filters }: Props
                     Assign user secara langsung ke Account Manager ini. Persetujuan langsung diberikan tanpa menunggu.
                 </div>
 
+                {(flash.error ?? error) && (
+                    <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-200">
+                        {flash.error ?? error}
+                    </div>
+                )}
+
+                {flash.success && (
+                    <div className="rounded-lg bg-green-50 p-4 text-sm text-green-700 ring-1 ring-green-200">
+                        {flash.success}
+                    </div>
+                )}
+
+
+
                 <form onSubmit={handleSearch} className="flex gap-2">
                     <input
                         type="text"
@@ -129,6 +150,7 @@ export default function AssignDownline({ accountManager, users, filters }: Props
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Nama</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Role</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Aksi</th>
                                 </tr>
@@ -138,9 +160,10 @@ export default function AssignDownline({ accountManager, users, filters }: Props
                                     <tr key={user.id}>
                                         <td className="px-6 py-4 text-sm font-medium text-gray-900">{user.name}</td>
                                         <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
+                                        <td className="px-6 py-4 text-sm capitalize text-gray-500">{user.role}</td>
                                         <td className="px-6 py-4 text-sm text-gray-500">{user.status}</td>
                                         <td className="px-6 py-4 text-right">
-                                            <AssignButton userId={user.id} accountManagerId={accountManager.id} />
+                                            <AssignButton user={user} accountManagerId={accountManager.id} />
                                         </td>
                                     </tr>
                                 ))}

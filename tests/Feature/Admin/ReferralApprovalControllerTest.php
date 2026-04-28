@@ -118,11 +118,27 @@ class ReferralApprovalControllerTest extends TestCase
     {
         $amUser = User::factory()->withRole('account_manager')->create();
         $accountManager = AccountManager::factory()->create(['user_id' => $amUser->id]);
-        $targetUser = User::factory()->withRole('external_user')->create(['status' => 'active']);
+
+        // Simulate an external API user that exists locally with external_id
+        $externalId = 9999;
+        $targetUser = User::factory()->withRole('external_user')->create([
+            'status' => 'active',
+            'external_id' => $externalId,
+            'email_verified_at' => now(),
+        ]);
 
         $response = $this->actingAs($this->admin)
             ->post(route('module.account-managers.assign-downline.store', $accountManager), [
-                'user_id' => $targetUser->id,
+                'user_id' => $externalId,
+                'user_data' => json_encode([
+                    'id' => $externalId,
+                    'name' => $targetUser->name,
+                    'email' => $targetUser->email,
+                    'username' => $targetUser->username,
+                    'role' => 'user',
+                    'status' => 'true',
+                    'manager_id' => 0,
+                ]),
             ]);
 
         $response->assertRedirect(route('module.account-managers.show', $accountManager));

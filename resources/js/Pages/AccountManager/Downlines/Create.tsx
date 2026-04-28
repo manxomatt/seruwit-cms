@@ -2,7 +2,7 @@ import DynamicLayout from '@/Layouts/DynamicLayout';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 const ArrowLeftIcon = () => (
@@ -16,9 +16,8 @@ export default function Create(): JSX.Element {
         username: '',
         email: '',
         password: '',
-        role: 'external_user',
-    });
-
+        role: 'user',
+    });    const { flash } = usePage<{ flash: { error?: string } }>().props;
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         post(route('account-manager.downlines.store'));
@@ -50,9 +49,9 @@ export default function Create(): JSX.Element {
                         </p>
                     </div>
                     <form onSubmit={submit} className="space-y-6 p-6">
-                        {errors.external && (
+                        {flash.error && (
                             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                                {errors.external}
+                                {flash.error}
                             </div>
                         )}
 
@@ -104,8 +103,8 @@ export default function Create(): JSX.Element {
                                 value={data.role}
                                 onChange={(e) => setData('role', e.target.value)}
                             >
-                                <option value="external_user">External User</option>
-                                <option value="external_manager">External Manager</option>
+                                <option value="user">User</option>
+                                <option value="manager">Manager</option>
                             </select>
                             <InputError message={errors.role} className="mt-2" />
                         </div>

@@ -112,6 +112,16 @@ class ExternalApiService
     }
 
     /**
+     * Make a POST request to the external API using API key authentication.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function postWithApiKey(string $path, array $data = []): Response
+    {
+        return $this->clientWithApiKey()->post($this->url($path), $data);
+    }
+
+    /**
      * Get users from the external API with optional role filter.
      *
      * @param  array<string>  $roles
