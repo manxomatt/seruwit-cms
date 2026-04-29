@@ -6,6 +6,7 @@ use App\Http\Controllers\AccountManager\DownlineController as AccountManagerDown
 use App\Http\Controllers\Admin\ReferralApprovalController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\External\DashboardController as ExternalDashboardController;
+use App\Http\Controllers\External\ObjectController as ExternalObjectController;
 use App\Http\Controllers\External\UserController as ExternalUserController;
 use App\Http\Controllers\LiveUpdateController;
 use App\Http\Controllers\Module\AccountManagerController as ModuleAccountManagerController;
@@ -58,6 +59,11 @@ Route::prefix('account-manager/downlines')->name('account-manager.downlines.')->
 Route::get('/external/users', [ExternalUserController::class, 'index'])
     ->middleware(['auth', 'external.super_admin'])
     ->name('external.users.index');
+
+// External API – object list
+Route::get('/external/objects', [ExternalObjectController::class, 'index'])
+    ->middleware(['auth'])
+    ->name('external.objects.index');
 
 Route::middleware('auth')->group(function () {
     // Module Routes - Local CMS users only; external API users are redirected.

@@ -300,6 +300,17 @@ export default function ModuleLayout({ header, children }: Props) {
             });
         }
 
+        // External users: add objects list from external API
+        if (routeExists('external.objects.index') && user.primary_role_slug?.startsWith('external')) {
+            items.push({
+                name: 'Objects',
+                href: route('external.objects.index'),
+                icon: <DashboardIcon />,
+                current: route().current('external.objects.*'),
+                module: 'external-objects',
+            });
+        }
+
         // Account Manager: add downline management
         if (user.primary_role_slug === 'account_manager' && routeExists('account-manager.downlines.index')) {
             items.push({

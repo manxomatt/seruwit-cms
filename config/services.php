@@ -37,6 +37,7 @@ return [
 
     'external_api' => [
         'url' => env('EXTERNAL_API_URL'),
+        'app_url' => env('EXTERNAL_APP_URL'),
         'key' => env('EXTERNAL_API_KEY'),
         'timeout' => (int) env('EXTERNAL_API_TIMEOUT', 10),
     ],
