@@ -40,6 +40,7 @@ return [
         'app_url' => env('EXTERNAL_APP_URL'),
         'key' => env('EXTERNAL_API_KEY'),
         'timeout' => (int) env('EXTERNAL_API_TIMEOUT', 10),
+        'quota_unit_price' => (int) env('EXTERNAL_QUOTA_UNIT_PRICE', 10_000),
     ],
 
 ];

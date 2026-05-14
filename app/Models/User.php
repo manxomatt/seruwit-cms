@@ -66,6 +66,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<BillingTransaction, $this>
+     */
+    public function billingTransactions(): HasMany
+    {
+        return $this->hasMany(BillingTransaction::class);
+    }
+
+    /**
      * Check if the user has admin role.
      */
     public function isAdmin(): bool

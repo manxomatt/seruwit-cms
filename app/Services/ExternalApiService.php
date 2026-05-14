@@ -81,6 +81,16 @@ class ExternalApiService
     }
 
     /**
+     * Determine whether a non-empty external API key is configured.
+     */
+    public function hasApiKey(): bool
+    {
+        $key = config('services.external_api.key');
+
+        return is_string($key) && $key !== '';
+    }
+
+    /**
      * Build an HTTP client pre-configured with the JWT Bearer token and timeout.
      */
     private function client(): PendingRequest
@@ -112,6 +122,16 @@ class ExternalApiService
     }
 
     /**
+     * Make a GET request to the external API using API key authentication.
+     *
+     * @param  array<string, mixed>  $query
+     */
+    public function getWithApiKey(string $path, array $query = []): Response
+    {
+        return $this->clientWithApiKey()->get($this->url($path), $query);
+    }
+
+    /**
      * Make a POST request to the external API using API key authentication.
      *
      * @param  array<string, mixed>  $data
@@ -122,16 +142,25 @@ class ExternalApiService
     }
 
     /**
+     * Fetch a billing account profile (user + quota) using API key authentication.
+     *
+     * @param  string|int  $billingUserId  External billing user id (typically {@see User::$external_id}).
+     */
+    public function getBillingUser(string|int $billingUserId): Response
+    {
+        $segment = rawurlencode((string) $billingUserId);
+
+        return $this->getWithApiKey('billing/users/'.$segment);
+    }
+
+    /**
      * Get users from the external API with optional role filter.
      *
      * @param  array<string>  $roles
      */
     public function getUsers(array $roles = ['manager', 'user']): Response
     {
-        return $this->clientWithApiKey()->get(
-            $this->url('users_api'),
-            ['role' => implode(',', $roles)]
-        );
+        return $this->getWithApiKey('users_api', ['role' => implode(',', $roles)]);
     }
 
     private function url(string $path): string

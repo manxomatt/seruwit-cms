@@ -4,10 +4,15 @@ use App\Http\Controllers\AccountManager\DashboardController as AccountManagerDas
 use App\Http\Controllers\AccountManager\DownlineAssignmentController as AccountManagerDownlineAssignmentController;
 use App\Http\Controllers\AccountManager\DownlineController as AccountManagerDownlineController;
 use App\Http\Controllers\Admin\ReferralApprovalController;
+use App\Http\Controllers\Billing\PaymentCallbackController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\External\DashboardController as ExternalDashboardController;
+use App\Http\Controllers\External\DeviceExtensionBillingController as ExternalDeviceExtensionBillingController;
 use App\Http\Controllers\External\ObjectController as ExternalObjectController;
+use App\Http\Controllers\External\QuotaCartController as ExternalQuotaCartController;
+use App\Http\Controllers\External\QuotaReviewController as ExternalQuotaReviewController;
 use App\Http\Controllers\External\UserController as ExternalUserController;
+use App\Http\Controllers\External\WaitingReviewController as ExternalWaitingReviewController;
 use App\Http\Controllers\LiveUpdateController;
 use App\Http\Controllers\Module\AccountManagerController as ModuleAccountManagerController;
 use App\Http\Controllers\Module\AnalyticsController as ModuleAnalyticsController;
@@ -32,6 +37,9 @@ Route::get('/', [PageController::class, 'homepage'])->name('home');
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 
+Route::post('/billing/payment/callback', PaymentCallbackController::class)
+    ->name('billing.payment.callback');
+
 Route::get('/dashboard', [ModuleDashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -40,6 +48,34 @@ Route::get('/dashboard', [ModuleDashboardController::class, 'index'])
 Route::get('/external/dashboard', [ExternalDashboardController::class, 'index'])
     ->middleware(['auth'])
     ->name('external.dashboard');
+
+Route::get('/external/quota-cart', [ExternalQuotaCartController::class, 'index'])
+    ->middleware(['auth'])
+    ->name('external.quota-cart');
+
+Route::post('/external/quota-cart', [ExternalQuotaCartController::class, 'store'])
+    ->middleware(['auth'])
+    ->name('external.quota-cart.store');
+
+Route::get('/external/quota/review', [ExternalQuotaReviewController::class, 'show'])
+    ->middleware(['auth'])
+    ->name('external.quota.review');
+
+Route::post('/external/quota/waiting-review', [ExternalWaitingReviewController::class, 'store'])
+    ->middleware(['auth'])
+    ->name('external.quota.waiting-review.store');
+
+Route::get('/external/quota/waiting-review', [ExternalWaitingReviewController::class, 'show'])
+    ->middleware(['auth'])
+    ->name('external.quota.waiting-review');
+
+Route::get('/external/billing/device-extension', [ExternalDeviceExtensionBillingController::class, 'create'])
+    ->middleware(['auth'])
+    ->name('external.billing.device-extension');
+
+Route::post('/external/billing/device-extension', [ExternalDeviceExtensionBillingController::class, 'store'])
+    ->middleware(['auth'])
+    ->name('external.billing.device-extension.store');
 
 // Account Manager dashboard
 Route::get('/account-manager/dashboard', [AccountManagerDashboardController::class, 'index'])

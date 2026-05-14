@@ -220,7 +220,7 @@ const getThemeColors = (isAdmin: boolean) => {
 
 export default function ModuleLayout({ header, children }: Props) {
     const pageProps = usePage().props as any;
-    const user = pageProps.auth.user as User | null;
+    const user = (pageProps.auth?.user ?? null) as User | null;
     const settings = pageProps.settings as Record<string, string> | undefined;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     
@@ -290,7 +290,7 @@ export default function ModuleLayout({ header, children }: Props) {
         }
 
         // External super admin: add users list from external API
-        if (user.primary_role_slug === 'external_super_admin' && routeExists('external.users.index')) {
+        if (user?.primary_role_slug === 'external_super_admin' && routeExists('external.users.index')) {
             items.push({
                 name: 'Users',
                 href: route('external.users.index'),
@@ -312,7 +312,7 @@ export default function ModuleLayout({ header, children }: Props) {
         }
 
         // Account Manager: add downline management
-        if (user.primary_role_slug === 'account_manager' && routeExists('account-manager.downlines.index')) {
+        if (user?.primary_role_slug === 'account_manager' && routeExists('account-manager.downlines.index')) {
             items.push({
                 name: 'Downline',
                 href: route('account-manager.downlines.index'),
