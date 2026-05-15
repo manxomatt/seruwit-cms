@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'billing/payment/callback',
         ]);
 
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
+
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'not.external' => \App\Http\Middleware\EnsureNotExternalUser::class,

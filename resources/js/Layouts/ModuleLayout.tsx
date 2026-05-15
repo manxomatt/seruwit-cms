@@ -115,6 +115,12 @@ const LiveUpdatesIcon = () => (
     </svg>
 );
 
+const WalletIcon = () => (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" />
+    </svg>
+);
+
 const MenuIcon = () => (
     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -293,8 +299,7 @@ export default function ModuleLayout({ header, children }: Props) {
                     route().current('module.dashboard') ||
                     route().current('dashboard') ||
                     route().current('account-manager.dashboard') ||
-                    route().current('external.dashboard') ||
-                    (typeof route().current() === 'string' && route().current().startsWith('external.')),
+                    route().current('external.dashboard'),
                 module: 'dashboard',
             },
         ];
@@ -386,6 +391,28 @@ export default function ModuleLayout({ header, children }: Props) {
                 icon: <UsersIcon />,
                 current: route().current('account-manager.downlines.*'),
                 module: 'downlines',
+            });
+        }
+
+        // Account Manager: referral commission history
+        if (user?.primary_role_slug === 'account_manager' && routeExists('account-manager.commissions.index')) {
+            items.push({
+                name: 'Riwayat Komisi Referral',
+                href: route('account-manager.commissions.index'),
+                icon: <HistoryMenuIcon />,
+                current: route().current('account-manager.commissions.*'),
+                module: 'account-manager-commissions',
+            });
+        }
+
+        // Account Manager: commission payouts
+        if (user?.primary_role_slug === 'account_manager' && routeExists('account-manager.payouts.index')) {
+            items.push({
+                name: 'Pencairan Komisi',
+                href: route('account-manager.payouts.index'),
+                icon: <WalletIcon />,
+                current: route().current('account-manager.payouts.*'),
+                module: 'account-manager-payouts',
             });
         }
 

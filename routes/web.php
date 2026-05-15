@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\AccountManager\CommissionHistoryController as AccountManagerCommissionHistoryController;
 use App\Http\Controllers\AccountManager\DashboardController as AccountManagerDashboardController;
 use App\Http\Controllers\AccountManager\DownlineAssignmentController as AccountManagerDownlineAssignmentController;
 use App\Http\Controllers\AccountManager\DownlineController as AccountManagerDownlineController;
+use App\Http\Controllers\AccountManager\PayoutController as AccountManagerPayoutController;
 use App\Http\Controllers\Admin\ReferralApprovalController;
 use App\Http\Controllers\Billing\PaymentCallbackController;
 use App\Http\Controllers\BlogController;
@@ -102,6 +104,17 @@ Route::prefix('account-manager/downlines')->name('account-manager.downlines.')->
     Route::post('/', [AccountManagerDownlineController::class, 'store'])->name('store');
     Route::get('/assign', [AccountManagerDownlineAssignmentController::class, 'create'])->name('assign');
     Route::post('/assign', [AccountManagerDownlineAssignmentController::class, 'store'])->name('assign.store');
+});
+
+// Account Manager – Referral commission history
+Route::get('/account-manager/commissions', [AccountManagerCommissionHistoryController::class, 'index'])
+    ->middleware(['auth', 'account.manager'])
+    ->name('account-manager.commissions.index');
+
+// Account Manager – Commission payouts
+Route::prefix('account-manager/payouts')->name('account-manager.payouts.')->middleware(['auth', 'account.manager'])->group(function () {
+    Route::get('/', [AccountManagerPayoutController::class, 'index'])->name('index');
+    Route::post('/', [AccountManagerPayoutController::class, 'store'])->name('store');
 });
 
 // External API – user list (external_super_admin only)

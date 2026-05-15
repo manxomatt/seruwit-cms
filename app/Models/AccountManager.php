@@ -63,4 +63,12 @@ class AccountManager extends Model
     {
         return $this->hasMany(ReferralRelation::class);
     }
+
+    /**
+     * @return HasMany<CommissionPayout, $this>
+     */
+    public function commissionPayouts(): HasMany
+    {
+        return $this->hasMany(CommissionPayout::class);
+    }
 }

@@ -35,4 +35,15 @@ return [
     |
     */
     'referral_commission_rate' => (float) env('BILLING_REFERRAL_COMMISSION_RATE', 0.10),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pencairan komisi (payout)
+    |--------------------------------------------------------------------------
+    |
+    | Nilai minimum pencairan komisi (IDR) per request payout. Permintaan
+    | dengan nilai di bawah ambang ini akan ditolak oleh form request.
+    |
+    */
+    'payout_minimum_amount' => (float) env('BILLING_PAYOUT_MINIMUM_AMOUNT', 50_000),
 ];
