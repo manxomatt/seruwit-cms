@@ -53,7 +53,7 @@ class PayoutController extends Controller
         return Inertia::render('AccountManager/Payouts', [
             'payouts' => $payouts,
             'wallet_balance' => $accountManager ? (float) $accountManager->wallet_balance : 0.0,
-            'minimum_amount' => (float) config('billing.payout_minimum_amount', 50_000),
+            'minimum_amount' => (float) config('billing.payout_minimum_amount', 10_000),
             'has_pending_request' => $accountManager
                 ? CommissionPayout::query()
                     ->where('account_manager_id', $accountManager->id)

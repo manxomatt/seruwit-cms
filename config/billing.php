@@ -45,5 +45,5 @@ return [
     | dengan nilai di bawah ambang ini akan ditolak oleh form request.
     |
     */
-    'payout_minimum_amount' => (float) env('BILLING_PAYOUT_MINIMUM_AMOUNT', 50_000),
+    'payout_minimum_amount' => (float) env('BILLING_PAYOUT_MINIMUM_AMOUNT', 10_000),
 ];

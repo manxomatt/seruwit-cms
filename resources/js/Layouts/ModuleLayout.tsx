@@ -121,6 +121,12 @@ const WalletIcon = () => (
     </svg>
 );
 
+const BillingIcon = () => (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+    </svg>
+);
+
 const MenuIcon = () => (
     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -346,6 +352,24 @@ export default function ModuleLayout({ header, children }: Props) {
                         icon: <UsersIcon />,
                         current: route().current('module.referral-approvals.*'),
                         module: 'referral-approvals',
+                    });
+                }
+                if (routeExists('module.payouts.index')) {
+                    items.push({
+                        name: 'Payout Approvals',
+                        href: route('module.payouts.index'),
+                        icon: <WalletIcon />,
+                        current: route().current('module.payouts.*'),
+                        module: 'payout-approvals',
+                    });
+                }
+                if (routeExists('module.billing-transactions.index')) {
+                    items.push({
+                        name: 'Billing Transactions',
+                        href: route('module.billing-transactions.index'),
+                        icon: <BillingIcon />,
+                        current: route().current('module.billing-transactions.*'),
+                        module: 'billing-transactions',
                     });
                 }
             }

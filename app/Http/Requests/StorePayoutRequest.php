@@ -16,7 +16,7 @@ class StorePayoutRequest extends FormRequest
      */
     public function rules(): array
     {
-        $minimum = (float) config('billing.payout_minimum_amount', 50_000);
+        $minimum = (float) config('billing.payout_minimum_amount', 10_000);
 
         return [
             'amount' => ['required', 'numeric', "min:{$minimum}"],
@@ -32,7 +32,7 @@ class StorePayoutRequest extends FormRequest
      */
     public function messages(): array
     {
-        $minimum = number_format((float) config('billing.payout_minimum_amount', 50_000), 0, ',', '.');
+        $minimum = number_format((float) config('billing.payout_minimum_amount', 10_000), 0, ',', '.');
 
         return [
             'amount.required' => 'Jumlah pencairan wajib diisi.',

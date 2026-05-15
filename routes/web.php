@@ -19,12 +19,14 @@ use App\Http\Controllers\External\WaitingReviewController as ExternalWaitingRevi
 use App\Http\Controllers\LiveUpdateController;
 use App\Http\Controllers\Module\AccountManagerController as ModuleAccountManagerController;
 use App\Http\Controllers\Module\AnalyticsController as ModuleAnalyticsController;
+use App\Http\Controllers\Module\BillingTransactionController as ModuleBillingTransactionController;
 use App\Http\Controllers\Module\CarouselController as ModuleCarouselController;
 use App\Http\Controllers\Module\CarouselImageController as ModuleCarouselImageController;
 use App\Http\Controllers\Module\DashboardController as ModuleDashboardController;
 use App\Http\Controllers\Module\GlobalSearchController as ModuleGlobalSearchController;
 use App\Http\Controllers\Module\MediaController as ModuleMediaController;
 use App\Http\Controllers\Module\PageController as ModulePageController;
+use App\Http\Controllers\Module\PayoutApprovalController as ModulePayoutApprovalController;
 use App\Http\Controllers\Module\PostController as ModulePostController;
 use App\Http\Controllers\Module\RoleController as ModuleRoleController;
 use App\Http\Controllers\Module\SettingController as ModuleSettingController;
@@ -225,6 +227,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/referral-approvals', [ReferralApprovalController::class, 'index'])->middleware('permission:users,view')->name('referral-approvals.index');
         Route::post('/referral-approvals/{referralRelation}/approve', [ReferralApprovalController::class, 'approve'])->middleware('permission:users,update')->name('referral-approvals.approve');
         Route::post('/referral-approvals/{referralRelation}/reject', [ReferralApprovalController::class, 'reject'])->middleware('permission:users,update')->name('referral-approvals.reject');
+
+        // Payout Approval Routes (admin)
+        Route::get('/payouts', [ModulePayoutApprovalController::class, 'index'])->middleware('permission:users,view')->name('payouts.index');
+        Route::post('/payouts/{payout}/approve', [ModulePayoutApprovalController::class, 'approve'])->middleware('permission:users,update')->name('payouts.approve');
+        Route::post('/payouts/{payout}/reject', [ModulePayoutApprovalController::class, 'reject'])->middleware('permission:users,update')->name('payouts.reject');
+        Route::post('/payouts/{payout}/mark-paid', [ModulePayoutApprovalController::class, 'markAsPaid'])->middleware('permission:users,update')->name('payouts.mark-paid');
+
+        // Billing Transaction Management (admin)
+        Route::get('/billing-transactions', [ModuleBillingTransactionController::class, 'index'])->middleware('permission:users,view')->name('billing-transactions.index');
+        Route::get('/billing-transactions/{billingTransaction}', [ModuleBillingTransactionController::class, 'show'])->middleware('permission:users,view')->name('billing-transactions.show');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
