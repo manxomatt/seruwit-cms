@@ -170,4 +170,24 @@ class RoleBasedRedirectTest extends TestCase
 
         $this->assertEquals('/module/dashboard', $user->getDashboardPath());
     }
+
+    public function test_get_dashboard_path_prioritizes_external_portal_when_user_also_has_user_role(): void
+    {
+        $user = User::factory()->withUserRole()->withRole('external_user')->create();
+
+        $this->assertEquals('/external/dashboard', $user->getDashboardPath());
+    }
+
+    public function test_login_redirects_to_external_dashboard_when_user_has_external_and_user_roles(): void
+    {
+        $user = User::factory()->withUserRole()->withRole('external_user')->create();
+
+        $response = $this->post('/login', [
+            'login' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect('/external/dashboard');
+    }
 }

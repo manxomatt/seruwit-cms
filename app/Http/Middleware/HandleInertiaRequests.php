@@ -59,6 +59,7 @@ class HandleInertiaRequests extends Middleware
                     'is_admin' => $user->isAdmin(),
                     'dashboard_path' => $user->getDashboardPath(),
                     'primary_role_slug' => $user->getPrimaryRole()?->slug,
+                    'has_external_portal_access' => $user->hasExternalPortalAccess(),
                     'profile' => $user->profile ? [
                         'id' => $user->profile->id,
                         'first_name' => $user->profile->first_name,

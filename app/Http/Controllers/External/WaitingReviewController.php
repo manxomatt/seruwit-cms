@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\External;
 
+use App\Enums\BillingTransactionType;
 use App\Http\Controllers\Controller;
 use App\Models\BillingTransaction;
 use App\Services\Billing\BillingTransactionService;
@@ -40,21 +41,24 @@ class WaitingReviewController extends Controller
     }
 
     /**
-     * Menampilkan status menunggu review setelah konfirmasi dari halaman review.
+     * Menampilkan status menunggu review setelah konfirmasi dari halaman review atau perpanjangan object.
      */
     public function show(Request $request): Response|RedirectResponse
     {
-        if (! $request->session()->pull('quota_visit_waiting_review', false)) {
+        $isQuotaVisit = $request->session()->pull('quota_visit_waiting_review', false);
+        $isDeviceVisit = $request->session()->pull('device_extension_visit_waiting_review', false);
+
+        if (! $isQuotaVisit && ! $isDeviceVisit) {
             return redirect()
-                ->route('external.quota-cart')
-                ->with('error', 'Tidak ada permintaan kuota untuk ditampilkan. Mulai dari cart atau review.');
+                ->route('external.dashboard')
+                ->with('error', 'Tidak ada halaman konfirmasi pembayaran untuk ditampilkan. Mulai dari daftar object atau cart kuota.');
         }
 
         $transactionId = $request->session()->pull('pending_billing_transaction_id');
 
         if (! is_int($transactionId) && ! is_numeric($transactionId)) {
             return redirect()
-                ->route('external.quota-cart')
+                ->route($isQuotaVisit ? 'external.quota-cart' : 'external.objects.index')
                 ->with('error', 'Transaksi billing tidak ditemukan di sesi.');
         }
 
@@ -65,24 +69,59 @@ class WaitingReviewController extends Controller
 
         if ($transaction === null) {
             return redirect()
-                ->route('external.quota-cart')
+                ->route($isQuotaVisit ? 'external.quota-cart' : 'external.objects.index')
                 ->with('error', 'Transaksi billing tidak ditemukan.');
         }
 
-        $checkout = $request->session()->get('quota_checkout');
+        if ($isQuotaVisit && $transaction->type !== BillingTransactionType::QuotaPurchase) {
+            return redirect()
+                ->route('external.quota-cart')
+                ->with('error', 'Data transaksi tidak sesuai.');
+        }
 
-        $quantity = is_array($checkout) && isset($checkout['quantity'])
-            ? (int) $checkout['quantity']
-            : (int) ($transaction->meta['quantity'] ?? 0);
+        if ($isDeviceVisit && $transaction->type !== BillingTransactionType::DeviceExtension) {
+            return redirect()
+                ->route('external.objects.index')
+                ->with('error', 'Data transaksi tidak sesuai.');
+        }
 
-        $request->session()->forget('quota_checkout');
+        if ($isQuotaVisit) {
+            $checkout = $request->session()->get('quota_checkout');
+
+            $quantity = is_array($checkout) && isset($checkout['quantity'])
+                ? (int) $checkout['quantity']
+                : (int) ($transaction->meta['quantity'] ?? 0);
+
+            $request->session()->forget('quota_checkout');
+
+            return Inertia::render('External/Quota/WaitingReview', [
+                'flow' => 'quota',
+                'success' => true,
+                'quantity' => $quantity,
+                'errorMessage' => null,
+                'cartUrl' => route('external.quota-cart'),
+                'reviewUrl' => route('external.quota.review'),
+                'dashboardUrl' => route('external.dashboard'),
+                'billingTransaction' => [
+                    'reference' => $transaction->reference,
+                    'amount' => $transaction->amount,
+                    'currency' => $transaction->currency,
+                    'status' => $transaction->status->value,
+                ],
+                'paymentCallbackUrl' => route('billing.payment.callback'),
+                'deviceSummary' => null,
+            ]);
+        }
+
+        $meta = is_array($transaction->meta) ? $transaction->meta : [];
 
         return Inertia::render('External/Quota/WaitingReview', [
+            'flow' => 'device_extension',
             'success' => true,
-            'quantity' => $quantity,
+            'quantity' => 0,
             'errorMessage' => null,
-            'cartUrl' => route('external.quota-cart'),
-            'reviewUrl' => route('external.quota.review'),
+            'cartUrl' => route('external.objects.index'),
+            'reviewUrl' => route('external.objects.index'),
             'dashboardUrl' => route('external.dashboard'),
             'billingTransaction' => [
                 'reference' => $transaction->reference,
@@ -91,6 +130,10 @@ class WaitingReviewController extends Controller
                 'status' => $transaction->status->value,
             ],
             'paymentCallbackUrl' => route('billing.payment.callback'),
+            'deviceSummary' => [
+                'identifier' => (string) ($meta['device_identifier'] ?? ''),
+                'label' => isset($meta['device_label']) ? (string) $meta['device_label'] : '',
+            ],
         ]);
     }
 }

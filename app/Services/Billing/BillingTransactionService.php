@@ -6,12 +6,16 @@ use App\Enums\BillingTransactionStatus;
 use App\Enums\BillingTransactionType;
 use App\Models\BillingTransaction;
 use App\Models\User;
+use App\Services\Referral\BillingPaidReferralCommissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class BillingTransactionService
 {
-    public function __construct(private readonly BillingActivityLogger $activityLogger) {}
+    public function __construct(
+        private readonly BillingActivityLogger $activityLogger,
+        private readonly BillingPaidReferralCommissionService $billingPaidReferralCommissionService,
+    ) {}
 
     /**
      * @param  array{quantity: int, unit_price: int, total: int}  $checkout
@@ -89,66 +93,76 @@ class BillingTransactionService
         array $rawPayload,
         ?Request $request = null,
     ): BillingTransaction {
-        $transaction = BillingTransaction::query()->where('reference', $reference)->firstOrFail();
+        return DB::transaction(function () use ($reference, $status, $gatewayPaymentId, $rawPayload, $request): BillingTransaction {
+            $transaction = BillingTransaction::query()
+                ->where('reference', $reference)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $this->activityLogger->log(
-            $transaction,
-            'payment.callback_received',
-            'Callback payment gateway diterima.',
-            [
-                'declared_status' => $status,
-                'gateway_payment_id' => $gatewayPaymentId,
-            ],
-            $request,
-        );
-
-        if ($transaction->status === BillingTransactionStatus::Paid) {
             $this->activityLogger->log(
                 $transaction,
-                'payment.callback_duplicate',
-                'Callback diabaikan: transaksi sudah berstatus dibayar.',
-                ['declared_status' => $status],
+                'payment.callback_received',
+                'Callback payment gateway diterima.',
+                [
+                    'declared_status' => $status,
+                    'gateway_payment_id' => $gatewayPaymentId,
+                ],
                 $request,
             );
 
-            return $transaction;
-        }
+            if ($transaction->status === BillingTransactionStatus::Paid) {
+                $this->activityLogger->log(
+                    $transaction,
+                    'payment.callback_duplicate',
+                    'Callback diabaikan: transaksi sudah berstatus dibayar.',
+                    ['declared_status' => $status],
+                    $request,
+                );
 
-        if ($status === 'paid') {
+                return $transaction;
+            }
+
+            if ($status === 'paid') {
+                $transaction->update([
+                    'status' => BillingTransactionStatus::Paid,
+                    'gateway_payment_id' => $gatewayPaymentId,
+                    'paid_at' => now(),
+                    'failed_at' => null,
+                    'failure_message' => null,
+                ]);
+
+                $fresh = $transaction->fresh();
+                $this->billingPaidReferralCommissionService->creditFromPaidBilling($fresh);
+
+                $this->activityLogger->log(
+                    $fresh,
+                    'payment.paid',
+                    'Pembayaran berhasil dicatat.',
+                    ['gateway_payment_id' => $gatewayPaymentId, 'payload_keys' => array_keys($rawPayload)],
+                    $request,
+                );
+
+                return $fresh;
+            }
+
             $transaction->update([
-                'status' => BillingTransactionStatus::Paid,
+                'status' => BillingTransactionStatus::Failed,
+                'failed_at' => now(),
+                'failure_message' => 'Gateway melaporkan kegagalan pembayaran.',
                 'gateway_payment_id' => $gatewayPaymentId,
-                'paid_at' => now(),
-                'failed_at' => null,
-                'failure_message' => null,
             ]);
 
+            $failed = $transaction->fresh();
+
             $this->activityLogger->log(
-                $transaction,
-                'payment.paid',
-                'Pembayaran berhasil dicatat.',
+                $failed,
+                'payment.failed',
+                'Pembayaran gagal menurut callback gateway.',
                 ['gateway_payment_id' => $gatewayPaymentId, 'payload_keys' => array_keys($rawPayload)],
                 $request,
             );
 
-            return $transaction->fresh();
-        }
-
-        $transaction->update([
-            'status' => BillingTransactionStatus::Failed,
-            'failed_at' => now(),
-            'failure_message' => 'Gateway melaporkan kegagalan pembayaran.',
-            'gateway_payment_id' => $gatewayPaymentId,
-        ]);
-
-        $this->activityLogger->log(
-            $transaction,
-            'payment.failed',
-            'Pembayaran gagal menurut callback gateway.',
-            ['gateway_payment_id' => $gatewayPaymentId, 'payload_keys' => array_keys($rawPayload)],
-            $request,
-        );
-
-        return $transaction->fresh();
+            return $failed;
+        });
     }
 }

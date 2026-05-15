@@ -87,6 +87,7 @@ class ExternalObjectsTest extends TestCase
             ->where('objects.0.icon', 'img/markers/objects/blue_car_1.png')
             ->where('objects.0.object_expire_dt', '2027-02-28 00:00:00')
             ->where('objects.0.trial', 'false')
+            ->where('objects.0.device_identifier', '')
             ->where('error', null)
             ->has('externalAppUrl')
         );
@@ -121,6 +122,7 @@ class ExternalObjectsTest extends TestCase
                 'icon' => 'img/markers/objects/blue_car_1.png',
                 'object_expire_dt' => '2027-02-28 00:00:00',
                 'trial' => 'true',
+                'device_identifier' => '352503095622038',
             ])
         );
     }

@@ -100,6 +100,20 @@ class User extends Authenticatable
     }
 
     /**
+     * Whether the user should see external portal navigation (e.g. /external/objects).
+     * Considers any assigned role, not only {@see getPrimaryRole()} (which prefers admin/user).
+     */
+    public function hasExternalPortalAccess(): bool
+    {
+        return $this->roles()
+            ->where(function ($query): void {
+                $query->where('slug', 'like', 'external%')
+                    ->orWhere('dashboard_path', '/external/dashboard');
+            })
+            ->exists();
+    }
+
+    /**
      * Check if the user has a specific permission.
      */
     public function hasPermission(string $permissionSlug): bool
@@ -289,9 +303,32 @@ class User extends Authenticatable
 
     /**
      * Get the dashboard path for the user based on their primary role.
+     *
+     * When the user has any external portal role, that path wins over {@see getPrimaryRole()}
+     * (which prefers `user` / `admin` and would otherwise send them to the module dashboard).
      */
     public function getDashboardPath(): string
     {
+        if ($this->hasExternalPortalAccess() && ! $this->isAdmin()) {
+            $portalRole = $this->roles()
+                ->where('slug', 'like', 'external%')
+                ->first();
+
+            if ($portalRole !== null) {
+                return $portalRole->getDashboardPath();
+            }
+
+            $fallbackRole = $this->roles()
+                ->where('dashboard_path', '/external/dashboard')
+                ->first();
+
+            if ($fallbackRole !== null) {
+                return $fallbackRole->getDashboardPath();
+            }
+
+            return '/external/dashboard';
+        }
+
         $primaryRole = $this->getPrimaryRole();
 
         if ($primaryRole) {

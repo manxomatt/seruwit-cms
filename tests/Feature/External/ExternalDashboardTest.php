@@ -103,6 +103,7 @@ class ExternalDashboardTest extends TestCase
             ->where('billingQuota.objects_remaining', 4)
             ->has('quotaCartUrl')
             ->has('deviceExtensionUrl')
+            ->has('objectsUrl')
         );
     }
 

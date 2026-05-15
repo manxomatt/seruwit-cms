@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\AccountManager;
+use App\Models\ReferralRelation;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -21,6 +22,7 @@ class ReferralRelationFactory extends Factory
             'external_manager_id' => null,
             'user_id' => User::factory(),
             'referral_code' => strtoupper(fake()->bothify('??######')),
+            'status' => ReferralRelation::STATUS_APPROVED,
         ];
     }
 }

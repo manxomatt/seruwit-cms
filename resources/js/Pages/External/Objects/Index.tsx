@@ -1,5 +1,5 @@
 import DynamicLayout from '@/Layouts/DynamicLayout';
-import { Head } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 interface DeviceObject {
@@ -7,6 +7,7 @@ interface DeviceObject {
     icon: string;
     object_expire_dt: string | null;
     trial: string;
+    device_identifier: string;
 }
 
 interface Props {
@@ -14,6 +15,18 @@ interface Props {
     error: string | null;
     externalAppUrl: string;
 }
+
+const buildDeviceExtensionConfirmUrl = (object: DeviceObject): string => {
+    const params = new URLSearchParams();
+    params.set('device_identifier', object.device_identifier);
+    if (object.name.trim() !== '') {
+        params.set('device_label', object.name);
+    }
+    if (object.object_expire_dt) {
+        params.set('object_expire_dt', object.object_expire_dt);
+    }
+    return `${route('external.billing.device-extension.confirm')}?${params.toString()}`;
+};
 
 const ExclamationIcon = () => (
     <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -68,6 +81,9 @@ const PER_PAGE_OPTIONS = [10, 25, 50, 100];
 export default function Index({ objects, error, externalAppUrl }: Props): JSX.Element {
     const [currentPage, setCurrentPage] = useState(1);
     const [perPage, setPerPage] = useState(25);
+    const pageProps = usePage().props as { errors?: Record<string, string> };
+    const inertiaErrors = pageProps.errors ?? {};
+    const inertiaErrorMessages = Object.values(inertiaErrors).filter(Boolean);
 
     const totalItems = objects.length;
     const lastPage = Math.max(1, Math.ceil(totalItems / perPage));
@@ -218,6 +234,19 @@ export default function Index({ objects, error, externalAppUrl }: Props): JSX.El
             <Head title="Daftar Object" />
 
             <div className="space-y-4">
+                {inertiaErrorMessages.length > 0 && (
+                    <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <ExclamationIcon />
+                        <div>
+                            <p className="font-medium text-amber-900">Tidak dapat membuka halaman konfirmasi</p>
+                            <ul className="mt-1 list-inside list-disc text-sm text-amber-800">
+                                {inertiaErrorMessages.map((msg, i) => (
+                                    <li key={i}>{msg}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                )}
                 {error && (
                     <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
                         <ExclamationIcon />
@@ -246,12 +275,15 @@ export default function Index({ objects, error, externalAppUrl }: Props): JSX.El
                                         <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                             Expired
                                         </th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                                            Aksi
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 bg-white">
                                     {paginated.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="px-6 py-12 text-center text-sm text-gray-500">
+                                            <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">
                                                 Tidak ada data object ditemukan.
                                             </td>
                                         </tr>
@@ -285,6 +317,20 @@ export default function Index({ objects, error, externalAppUrl }: Props): JSX.El
                                                 </td>
                                                 <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                                     {formatDate(object.object_expire_dt)}
+                                                </td>
+                                                <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
+                                                    {object.device_identifier ? (
+                                                        <Link
+                                                            href={buildDeviceExtensionConfirmUrl(object)}
+                                                            className="font-medium text-cyan-600 hover:text-cyan-800 dark:text-cyan-400 dark:hover:text-cyan-300"
+                                                        >
+                                                            Perpanjang
+                                                        </Link>
+                                                    ) : (
+                                                        <span className="text-gray-400" title="Identitas perangkat tidak tersedia dari API">
+                                                            —
+                                                        </span>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))

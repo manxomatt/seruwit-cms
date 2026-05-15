@@ -59,11 +59,13 @@ class WaitingReviewTest extends TestCase
         $view->assertStatus(200);
         $view->assertInertia(fn ($page) => $page
             ->component('External/Quota/WaitingReview')
+            ->where('flow', 'quota')
             ->where('success', true)
             ->where('quantity', 5)
             ->where('errorMessage', null)
             ->has('billingTransaction')
             ->has('paymentCallbackUrl')
+            ->where('deviceSummary', null)
         );
 
         $this->assertDatabaseHas('billing_transactions', [
@@ -78,7 +80,7 @@ class WaitingReviewTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('external.quota.waiting-review'));
 
-        $response->assertRedirect(route('external.quota-cart'));
+        $response->assertRedirect(route('external.dashboard'));
         $response->assertSessionHas('error');
     }
 
@@ -94,6 +96,6 @@ class WaitingReviewTest extends TestCase
 
         $again = $this->actingAs($user)->get(route('external.quota.waiting-review'));
 
-        $again->assertRedirect(route('external.quota-cart'));
+        $again->assertRedirect(route('external.dashboard'));
     }
 }

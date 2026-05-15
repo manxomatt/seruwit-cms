@@ -24,12 +24,20 @@ class ObjectController extends Controller
                 $data = $response->json();
 
                 if (is_array($data)) {
-                    $objects = array_map(fn (array $item): array => [
-                        'name' => $item['name'] ?? '',
-                        'icon' => $item['icon'] ?? '',
-                        'object_expire_dt' => $item['object_expire_dt'] ?? null,
-                        'trial' => $item['trial'] ?? 'false',
-                    ], $data);
+                    $objects = array_map(function (array $item): array {
+                        $identifier = $item['imei'] ?? $item['id'] ?? $item['object_id'] ?? $item['unique_id'] ?? null;
+                        $deviceIdentifier = $identifier !== null && $identifier !== ''
+                            ? (string) $identifier
+                            : '';
+
+                        return [
+                            'name' => $item['name'] ?? '',
+                            'icon' => $item['icon'] ?? '',
+                            'object_expire_dt' => $item['object_expire_dt'] ?? null,
+                            'trial' => $item['trial'] ?? 'false',
+                            'device_identifier' => $deviceIdentifier,
+                        ];
+                    }, $data);
                 } else {
                     $error = 'Format respons tidak valid dari sistem eksternal.';
                     Log::warning('External API /objects unexpected format', ['data' => $data]);

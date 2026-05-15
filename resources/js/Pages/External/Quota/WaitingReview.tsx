@@ -8,7 +8,13 @@ interface BillingTransactionSummary {
     status: string;
 }
 
+interface DeviceSummary {
+    identifier: string;
+    label: string;
+}
+
 interface Props {
+    flow: 'quota' | 'device_extension';
     success: boolean;
     quantity: number;
     errorMessage: string | null;
@@ -17,6 +23,7 @@ interface Props {
     dashboardUrl: string;
     billingTransaction: BillingTransactionSummary | null;
     paymentCallbackUrl: string;
+    deviceSummary: DeviceSummary | null;
 }
 
 const formatIdr = (amount: number): string =>
@@ -28,6 +35,7 @@ const formatIdr = (amount: number): string =>
     }).format(amount);
 
 export default function WaitingReview({
+    flow,
     success,
     quantity,
     errorMessage,
@@ -36,16 +44,20 @@ export default function WaitingReview({
     dashboardUrl,
     billingTransaction,
     paymentCallbackUrl,
+    deviceSummary,
 }: Props): JSX.Element {
+    const isDevice = flow === 'device_extension';
+    const pageTitle = isDevice ? 'Menunggu review perpanjangan' : 'Menunggu review kuota';
+
     return (
         <DynamicLayout
             header={
                 <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-                    Menunggu review
+                    {isDevice ? 'Konfirmasi pembayaran perpanjangan' : 'Menunggu review'}
                 </h2>
             }
         >
-            <Head title="Menunggu review kuota" />
+            <Head title={pageTitle} />
 
             <div className="space-y-6">
                 <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg dark:bg-gray-800">
@@ -73,15 +85,34 @@ export default function WaitingReview({
                                     </div>
                                     <div>
                                         <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-100">
-                                            Permintaan sedang ditinjau
+                                            {isDevice ? 'Perpanjangan dicatat — lanjutkan pembayaran' : 'Permintaan sedang ditinjau'}
                                         </h3>
-                                        <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">
-                                            Penambahan{' '}
-                                            <span className="font-semibold">{quantity.toLocaleString('id-ID')} kuota</span>{' '}
-                                            telah dicatat sebagai transaksi billing. Tim dapat meninjau permintaan
-                                            Anda. Selesaikan pembayaran melalui payment gateway; gateway memanggil URL
-                                            callback aplikasi ini setelah pembayaran.
-                                        </p>
+                                        {isDevice ? (
+                                            <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">
+                                                Transaksi perpanjangan masa aktif perangkat telah dibuat. Selesaikan
+                                                pembayaran melalui payment gateway; gateway memanggil URL callback
+                                                aplikasi setelah pembayaran.
+                                            </p>
+                                        ) : (
+                                            <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">
+                                                Penambahan{' '}
+                                                <span className="font-semibold">{quantity.toLocaleString('id-ID')} kuota</span>{' '}
+                                                telah dicatat sebagai transaksi billing. Tim dapat meninjau permintaan
+                                                Anda. Selesaikan pembayaran melalui payment gateway; gateway memanggil URL
+                                                callback aplikasi ini setelah pembayaran.
+                                            </p>
+                                        )}
+                                        {isDevice && deviceSummary !== null && (
+                                            <div className="mt-3 rounded-md border border-amber-200/80 bg-white/70 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-gray-900/40 dark:text-amber-100">
+                                                <p>
+                                                    <span className="font-medium">Perangkat:</span>{' '}
+                                                    {deviceSummary.label.trim() ? deviceSummary.label : '—'}
+                                                </p>
+                                                <p className="mt-1 break-all font-mono text-xs">
+                                                    {deviceSummary.identifier}
+                                                </p>
+                                            </div>
+                                        )}
                                         {billingTransaction !== null && (
                                             <div className="mt-4 rounded-md border border-amber-300/60 bg-white/80 p-4 text-sm text-amber-950 dark:border-amber-700 dark:bg-gray-900/50 dark:text-amber-100">
                                                 <p className="font-medium">Referensi transaksi (untuk gateway)</p>
@@ -113,8 +144,9 @@ export default function WaitingReview({
                                     {errorMessage ?? 'Terjadi kesalahan saat menghubungi sistem billing.'}
                                 </p>
                                 <p className="mt-3 text-sm text-red-800 dark:text-red-200">
-                                    Anda dapat mengubah jumlah di cart atau mencoba konfirmasi ulang dari halaman
-                                    review jika data checkout masih tersedia.
+                                    {isDevice
+                                        ? 'Anda dapat kembali ke daftar object atau mencoba lagi dari halaman perpanjangan.'
+                                        : 'Anda dapat mengubah jumlah di cart atau mencoba konfirmasi ulang dari halaman review jika data checkout masih tersedia.'}
                                 </p>
                             </div>
                         )}
@@ -124,9 +156,9 @@ export default function WaitingReview({
                                 href={cartUrl}
                                 className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
                             >
-                                Ke cart kuota
+                                {isDevice ? 'Ke daftar object' : 'Ke cart kuota'}
                             </Link>
-                            {!success && (
+                            {!isDevice && !success && (
                                 <Link
                                     href={reviewUrl}
                                     className="inline-flex items-center rounded-md bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cyan-500 dark:bg-cyan-500 dark:hover:bg-cyan-400"

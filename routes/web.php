@@ -6,6 +6,7 @@ use App\Http\Controllers\AccountManager\DownlineController as AccountManagerDown
 use App\Http\Controllers\Admin\ReferralApprovalController;
 use App\Http\Controllers\Billing\PaymentCallbackController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\External\BillingTransactionHistoryController as ExternalBillingTransactionHistoryController;
 use App\Http\Controllers\External\DashboardController as ExternalDashboardController;
 use App\Http\Controllers\External\DeviceExtensionBillingController as ExternalDeviceExtensionBillingController;
 use App\Http\Controllers\External\ObjectController as ExternalObjectController;
@@ -69,6 +70,14 @@ Route::get('/external/quota/waiting-review', [ExternalWaitingReviewController::c
     ->middleware(['auth'])
     ->name('external.quota.waiting-review');
 
+Route::get('/external/billing/device-extension/confirm', [ExternalDeviceExtensionBillingController::class, 'confirm'])
+    ->middleware(['auth'])
+    ->name('external.billing.device-extension.confirm');
+
+Route::post('/external/billing/device-extension/confirm', [ExternalDeviceExtensionBillingController::class, 'confirmStore'])
+    ->middleware(['auth'])
+    ->name('external.billing.device-extension.confirm.store');
+
 Route::get('/external/billing/device-extension', [ExternalDeviceExtensionBillingController::class, 'create'])
     ->middleware(['auth'])
     ->name('external.billing.device-extension');
@@ -76,6 +85,10 @@ Route::get('/external/billing/device-extension', [ExternalDeviceExtensionBilling
 Route::post('/external/billing/device-extension', [ExternalDeviceExtensionBillingController::class, 'store'])
     ->middleware(['auth'])
     ->name('external.billing.device-extension.store');
+
+Route::get('/external/billing/transactions', [ExternalBillingTransactionHistoryController::class, 'index'])
+    ->middleware(['auth'])
+    ->name('external.billing.transactions.index');
 
 // Account Manager dashboard
 Route::get('/account-manager/dashboard', [AccountManagerDashboardController::class, 'index'])

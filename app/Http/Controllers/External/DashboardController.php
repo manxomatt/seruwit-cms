@@ -74,6 +74,7 @@ class DashboardController extends Controller
             'billingError' => $billingError,
             'quotaCartUrl' => route('external.quota-cart'),
             'deviceExtensionUrl' => route('external.billing.device-extension'),
+            'objectsUrl' => route('external.objects.index'),
         ]);
     }
 }

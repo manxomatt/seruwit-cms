@@ -20,6 +20,7 @@ interface User {
     is_admin: boolean;
     dashboard_path: string;
     primary_role_slug: string | null;
+    has_external_portal_access?: boolean;
     profile: UserProfile | null;
     permissions: Record<string, string[]>;
 }
@@ -40,6 +41,22 @@ interface MenuItem {
 const DashboardIcon = () => (
     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+    </svg>
+);
+
+const ObjectDeviceIcon = () => (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+    </svg>
+);
+
+const HistoryMenuIcon = () => (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden>
+        <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
     </svg>
 );
 
@@ -191,8 +208,39 @@ const routeExists = (routeName: string): boolean => {
     }
 };
 
+// External portal users should land on /external/dashboard, not module dashboard
+// (getDashboardPath() on the server follows primary role and may point to /module/dashboard).
+const prefersExternalPortalDashboard = (user: User | null): boolean => {
+    try {
+        const routeName = route().current();
+        if (typeof routeName === 'string' && routeName.startsWith('external.')) {
+            return true;
+        }
+    } catch {
+        // Ziggy may not be ready in edge cases
+    }
+
+    if (!user) {
+        return false;
+    }
+
+    return (
+        user.has_external_portal_access === true ||
+        user.dashboard_path === '/external/dashboard' ||
+        Boolean(user.primary_role_slug?.toLowerCase().startsWith('external'))
+    );
+};
+
 // Helper function to get dashboard route based on user role
 const getDashboardRoute = (user: User | null): string => {
+    if (prefersExternalPortalDashboard(user)) {
+        try {
+            return route('external.dashboard');
+        } catch {
+            return '/external/dashboard';
+        }
+    }
+
     if (user?.dashboard_path) {
         return user.dashboard_path;
     }
@@ -219,7 +267,8 @@ const getThemeColors = (isAdmin: boolean) => {
 };
 
 export default function ModuleLayout({ header, children }: Props) {
-    const pageProps = usePage().props as any;
+    const inertiaPage = usePage();
+    const pageProps = inertiaPage.props as any;
     const user = (pageProps.auth?.user ?? null) as User | null;
     const settings = pageProps.settings as Record<string, string> | undefined;
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -240,7 +289,12 @@ export default function ModuleLayout({ header, children }: Props) {
                 name: 'Dashboard',
                 href: dashboardRoute,
                 icon: <DashboardIcon />,
-                current: route().current('module.dashboard') || route().current('dashboard') || route().current('account-manager.dashboard'),
+                current:
+                    route().current('module.dashboard') ||
+                    route().current('dashboard') ||
+                    route().current('account-manager.dashboard') ||
+                    route().current('external.dashboard') ||
+                    (typeof route().current() === 'string' && route().current().startsWith('external.')),
                 module: 'dashboard',
             },
         ];
@@ -250,46 +304,47 @@ export default function ModuleLayout({ header, children }: Props) {
         }
 
         const permissions = user.permissions || {};
+        const hideModuleCmsNav = prefersExternalPortalDashboard(user);
 
         // Add menu items based on user permissions (need 'view' permission for the module)
-        Object.keys(permissions).forEach((module) => {
-            const modulePermissions = permissions[module];
-            // Only add menu item if user has 'view' permission, route mapping exists, and route actually exists
-            if (modulePermissions.includes('view') && moduleRouteMap[module] && routeExists(moduleRouteMap[module].route)) {
-                const routeInfo = moduleRouteMap[module];
-                items.push({
-                    name: moduleDisplayNames[module] || module,
-                    href: route(routeInfo.route),
-                    icon: moduleIconMap[module] || <PagesIcon />,
-                    current: route().current(routeInfo.routePattern),
-                    module: module,
-                });
-            }
-        });
+        if (!hideModuleCmsNav) {
+            Object.keys(permissions).forEach((module) => {
+                const modulePermissions = permissions[module];
+                // Only add menu item if user has 'view' permission, route mapping exists, and route actually exists
+                if (modulePermissions.includes('view') && moduleRouteMap[module] && routeExists(moduleRouteMap[module].route)) {
+                    const routeInfo = moduleRouteMap[module];
+                    items.push({
+                        name: moduleDisplayNames[module] || module,
+                        href: route(routeInfo.route),
+                        icon: moduleIconMap[module] || <PagesIcon />,
+                        current: route().current(routeInfo.routePattern),
+                        module: module,
+                    });
+                }
+            });
 
-        // Add Account Managers and Referral Approvals for users with users:view permission
-        if (permissions['users']?.includes('view')) {
-            if (routeExists('module.account-managers.index')) {
-                items.push({
-                    name: 'Account Managers',
-                    href: route('module.account-managers.index'),
-                    icon: <UsersIcon />,
-                    current: route().current('module.account-managers.*'),
-                    module: 'account-managers',
-                });
-            }
-            if (routeExists('module.referral-approvals.index')) {
-                items.push({
-                    name: 'Referral Approvals',
-                    href: route('module.referral-approvals.index'),
-                    icon: <UsersIcon />,
-                    current: route().current('module.referral-approvals.*'),
-                    module: 'referral-approvals',
-                });
+            // Add Account Managers and Referral Approvals for users with users:view permission
+            if (permissions['users']?.includes('view')) {
+                if (routeExists('module.account-managers.index')) {
+                    items.push({
+                        name: 'Account Managers',
+                        href: route('module.account-managers.index'),
+                        icon: <UsersIcon />,
+                        current: route().current('module.account-managers.*'),
+                        module: 'account-managers',
+                    });
+                }
+                if (routeExists('module.referral-approvals.index')) {
+                    items.push({
+                        name: 'Referral Approvals',
+                        href: route('module.referral-approvals.index'),
+                        icon: <UsersIcon />,
+                        current: route().current('module.referral-approvals.*'),
+                        module: 'referral-approvals',
+                    });
+                }
             }
         }
-
-        // External super admin: add users list from external API
         if (user?.primary_role_slug === 'external_super_admin' && routeExists('external.users.index')) {
             items.push({
                 name: 'Users',
@@ -300,14 +355,26 @@ export default function ModuleLayout({ header, children }: Props) {
             });
         }
 
-        // External users: add objects list from external API
-        if (routeExists('external.objects.index') && user.primary_role_slug?.startsWith('external')) {
+        // External portal: objects & billing history (same rules as external dashboard link)
+        const showExternalObjects = prefersExternalPortalDashboard(user);
+
+        if (routeExists('external.objects.index') && showExternalObjects) {
             items.push({
-                name: 'Objects',
+                name: 'Object',
                 href: route('external.objects.index'),
-                icon: <DashboardIcon />,
-                current: route().current('external.objects.*'),
+                icon: <ObjectDeviceIcon />,
+                current: route().current('external.objects.*') || route().current('external.billing.device-extension*'),
                 module: 'external-objects',
+            });
+        }
+
+        if (routeExists('external.billing.transactions.index') && showExternalObjects) {
+            items.push({
+                name: 'Riwayat transaksi',
+                href: route('external.billing.transactions.index'),
+                icon: <HistoryMenuIcon />,
+                current: route().current('external.billing.transactions*'),
+                module: 'external-billing-history',
             });
         }
 
@@ -323,7 +390,7 @@ export default function ModuleLayout({ header, children }: Props) {
         }
 
         return items;
-    }, [user]);
+    }, [user, inertiaPage.url]);
 
     return (
         <div className="min-h-screen bg-gray-50">

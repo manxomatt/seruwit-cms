@@ -57,6 +57,7 @@ interface Props {
     billingError: string | null;
     quotaCartUrl: string;
     deviceExtensionUrl: string;
+    objectsUrl: string;
 }
 
 const ExclamationIcon = () => (
@@ -111,6 +112,7 @@ export default function Dashboard({
     billingError,
     quotaCartUrl,
     deviceExtensionUrl,
+    objectsUrl,
 }: Props): JSX.Element {
     const { flash } = usePage<{ flash: Flash }>().props;
 
@@ -141,6 +143,17 @@ export default function Dashboard({
                     <div className="p-6 text-gray-900 dark:text-gray-100">
                         <h3 className="mb-1 text-lg font-medium">Selamat datang, {user.name}</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">@{user.username}</p>
+                        <div className="mt-4">
+                            <Link
+                                href={objectsUrl}
+                                className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+                            >
+                                <svg className="h-5 w-5 text-cyan-600 dark:text-cyan-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                                </svg>
+                                Object & device — lihat daftar milik Anda
+                            </Link>
+                        </div>
                     </div>
                 </div>
 
