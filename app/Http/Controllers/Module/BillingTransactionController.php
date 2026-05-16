@@ -64,6 +64,15 @@ class BillingTransactionController extends Controller
         return Inertia::render('Module/BillingTransactions/Show', [
             'transaction' => array_merge($this->transformRow($billingTransaction), [
                 'meta' => $billingTransaction->meta,
+                'fulfillment' => [
+                    'fulfilled_at' => $billingTransaction->fulfilled_at?->toIso8601String(),
+                    'attempts' => (int) $billingTransaction->fulfillment_attempts,
+                    'method' => $billingTransaction->fulfillment_method,
+                    'endpoint' => $billingTransaction->fulfillment_endpoint,
+                    'request' => $billingTransaction->fulfillment_request,
+                    'response' => $billingTransaction->fulfillment_response,
+                    'error' => $billingTransaction->fulfillment_error,
+                ],
                 'logs' => $billingTransaction->logs->map(fn ($log): array => [
                     'id' => $log->id,
                     'action' => $log->action,

@@ -174,6 +174,36 @@ class ExternalApiService
     }
 
     /**
+     * List billing objects (devices) owned by an external manager.
+     *
+     * External contract: GET /billing/objects?manager_id=<id>&page=<n>&per_page=<n>.
+     */
+    public function listBillingObjects(string|int $managerId, int $page = 1, int $perPage = 100): Response
+    {
+        return $this->getWithApiKey('billing/objects', [
+            'manager_id' => is_numeric($managerId) ? (int) $managerId : $managerId,
+            'page' => $page,
+            'per_page' => $perPage,
+        ]);
+    }
+
+    /**
+     * Build the request payload for incrementing a user's quota.
+     *
+     * @return array{method: 'PATCH', path: string, payload: array<string, mixed>}
+     */
+    public function buildIncrementUserQuotaRequest(string|int $billingUserId, int $addToQuota): array
+    {
+        $template = (string) config('services.external_api.quota_fulfillment_path', 'billing/users/{id}/quota');
+
+        return [
+            'method' => 'PATCH',
+            'path' => $this->resolvePath($template, $billingUserId),
+            'payload' => ['add_to_quota' => $addToQuota],
+        ];
+    }
+
+    /**
      * Increment the user's object quota in the external system after a
      * successful quota purchase callback.
      *
@@ -181,12 +211,28 @@ class ExternalApiService
      */
     public function incrementUserQuota(string|int $billingUserId, int $addToQuota): Response
     {
-        $template = (string) config('services.external_api.quota_fulfillment_path', 'billing/users/{id}/quota');
+        $request = $this->buildIncrementUserQuotaRequest($billingUserId, $addToQuota);
 
-        return $this->patchWithApiKey(
-            $this->resolvePath($template, $billingUserId),
-            ['add_to_quota' => $addToQuota],
-        );
+        return $this->patchWithApiKey($request['path'], $request['payload']);
+    }
+
+    /**
+     * Build the request payload for extending a device's expiry.
+     *
+     * @return array{method: 'PATCH', path: string, payload: array<string, mixed>}
+     */
+    public function buildExtendDeviceExpiryRequest(string|int $billingUserId, string $imei): array
+    {
+        $path = (string) config('services.external_api.device_extension_fulfillment_path', 'billing/objects/expire');
+
+        return [
+            'method' => 'PATCH',
+            'path' => $path,
+            'payload' => [
+                'imei' => $imei,
+                'user_id' => is_numeric($billingUserId) ? (int) $billingUserId : $billingUserId,
+            ],
+        ];
     }
 
     /**
@@ -197,12 +243,9 @@ class ExternalApiService
      */
     public function extendDeviceExpiry(string|int $billingUserId, string $imei): Response
     {
-        $path = (string) config('services.external_api.device_extension_fulfillment_path', 'billing/objects/expire');
+        $request = $this->buildExtendDeviceExpiryRequest($billingUserId, $imei);
 
-        return $this->patchWithApiKey($path, [
-            'imei' => $imei,
-            'user_id' => is_numeric($billingUserId) ? (int) $billingUserId : $billingUserId,
-        ]);
+        return $this->patchWithApiKey($request['path'], $request['payload']);
     }
 
     /**

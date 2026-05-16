@@ -18,6 +18,16 @@ interface TransactionLog {
     created_at: string | null;
 }
 
+interface FulfillmentInfo {
+    fulfilled_at: string | null;
+    attempts: number;
+    method: string | null;
+    endpoint: string | null;
+    request: Record<string, unknown> | null;
+    response: string | null;
+    error: string | null;
+}
+
 interface Transaction {
     id: number;
     reference: string;
@@ -35,6 +45,7 @@ interface Transaction {
     created_at: string | null;
     user: UserSummary | null;
     meta: Record<string, unknown> | null;
+    fulfillment: FulfillmentInfo;
     logs: TransactionLog[];
 }
 
@@ -180,6 +191,85 @@ export default function BillingTransactionsShow({ transaction }: Props): JSX.Ele
                                 </pre>
                             ) : (
                                 <p className="text-sm text-gray-500 dark:text-gray-400">Tidak ada metadata.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-gray-700">
+                    <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-base font-semibold text-gray-900 dark:text-white">External API Fulfillment</h3>
+                                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    Request yang dikirim ke external API setelah pembayaran sukses
+                                </p>
+                            </div>
+                            <span
+                                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                    transaction.fulfillment.fulfilled_at
+                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
+                                        : transaction.fulfillment.error
+                                            ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200'
+                                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
+                                }`}
+                            >
+                                {transaction.fulfillment.fulfilled_at
+                                    ? 'Berhasil'
+                                    : transaction.fulfillment.error
+                                        ? 'Gagal'
+                                        : 'Belum dikirim'}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="grid gap-4 px-6 py-4 lg:grid-cols-2">
+                        <div>
+                            <DataRow
+                                label="Endpoint"
+                                value={
+                                    transaction.fulfillment.endpoint ? (
+                                        <span className="font-mono text-xs">
+                                            <span className="mr-2 inline-flex rounded bg-cyan-100 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-200">
+                                                {transaction.fulfillment.method ?? '—'}
+                                            </span>
+                                            {transaction.fulfillment.endpoint}
+                                        </span>
+                                    ) : (
+                                        '—'
+                                    )
+                                }
+                            />
+                            <DataRow label="Dikirim pada" value={formatDateTime(transaction.fulfillment.fulfilled_at)} />
+                            <DataRow label="Percobaan" value={transaction.fulfillment.attempts} />
+                            {transaction.fulfillment.error && (
+                                <DataRow
+                                    label="Error terakhir"
+                                    value={<span className="text-red-600 dark:text-red-400">{transaction.fulfillment.error}</span>}
+                                />
+                            )}
+                        </div>
+                        <div className="space-y-3">
+                            <div>
+                                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                    Body payload (request)
+                                </p>
+                                {transaction.fulfillment.request ? (
+                                    <pre className="max-h-48 overflow-auto rounded-md bg-gray-50 p-3 text-xs text-gray-800 dark:bg-gray-900/50 dark:text-gray-200">
+                                        {JSON.stringify(transaction.fulfillment.request, null, 2)}
+                                    </pre>
+                                ) : (
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Belum ada payload tercatat.</p>
+                                )}
+                            </div>
+                            {transaction.fulfillment.response && (
+                                <div>
+                                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                        Response body (snippet)
+                                    </p>
+                                    <pre className="max-h-48 overflow-auto rounded-md bg-gray-50 p-3 text-xs text-gray-800 dark:bg-gray-900/50 dark:text-gray-200">
+                                        {transaction.fulfillment.response}
+                                    </pre>
+                                </div>
                             )}
                         </div>
                     </div>

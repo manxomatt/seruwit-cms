@@ -69,6 +69,9 @@ class FulfillPaidBillingTransactionServiceTest extends TestCase
         $this->assertNotNull($fresh->fulfilled_at);
         $this->assertSame(1, $fresh->fulfillment_attempts);
         $this->assertNull($fresh->fulfillment_error);
+        $this->assertSame('PATCH', $fresh->fulfillment_method);
+        $this->assertSame('billing/users/ext-123/quota', $fresh->fulfillment_endpoint);
+        $this->assertSame(['add_to_quota' => 10], $fresh->fulfillment_request);
 
         $this->assertSame(1, BillingTransactionLog::query()
             ->where('billing_transaction_id', $transaction->id)
@@ -103,7 +106,14 @@ class FulfillPaidBillingTransactionServiceTest extends TestCase
                 && ($body['user_id'] ?? null) === 999;
         });
 
-        $this->assertNotNull($transaction->fresh()->fulfilled_at);
+        $fresh = $transaction->fresh();
+        $this->assertNotNull($fresh->fulfilled_at);
+        $this->assertSame('PATCH', $fresh->fulfillment_method);
+        $this->assertSame('billing/objects/expire', $fresh->fulfillment_endpoint);
+        $this->assertSame(
+            ['imei' => '350000000000001', 'user_id' => 999],
+            $fresh->fulfillment_request,
+        );
     }
 
     public function test_device_extension_fails_when_imei_missing_in_meta(): void
@@ -182,6 +192,8 @@ class FulfillPaidBillingTransactionServiceTest extends TestCase
         $this->assertNull($fresh->fulfilled_at);
         $this->assertSame(1, $fresh->fulfillment_attempts);
         $this->assertStringContainsString('status 500', (string) $fresh->fulfillment_error);
+        // Payload tetap tercatat meskipun request gagal, untuk keperluan debugging.
+        $this->assertSame(['add_to_quota' => 5], $fresh->fulfillment_request);
 
         $this->assertSame(1, BillingTransactionLog::query()
             ->where('billing_transaction_id', $transaction->id)

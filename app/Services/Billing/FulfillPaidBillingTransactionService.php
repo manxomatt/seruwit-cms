@@ -65,19 +65,19 @@ class FulfillPaidBillingTransactionService
             return;
         }
 
-        if ($transaction->type === BillingTransactionType::DeviceExtension) {
-            $imei = $this->deviceImei($transaction);
+        $built = $this->buildOutgoingRequest($transaction, $externalId);
 
-            if ($imei === null) {
-                $this->recordFailure(
-                    $transaction,
-                    'IMEI device tidak ditemukan pada metadata transaksi.',
-                    $request,
-                );
+        if ($built === null) {
+            $this->recordFailure(
+                $transaction,
+                'IMEI device tidak ditemukan pada metadata transaksi.',
+                $request,
+            );
 
-                return;
-            }
+            return;
         }
+
+        $this->persistOutgoingRequest($transaction, $built);
 
         try {
             $response = match ($transaction->type) {
@@ -126,9 +126,48 @@ class FulfillPaidBillingTransactionService
                 'type' => $transaction->type->value,
                 'external_id' => (string) $externalId,
                 'status_code' => $response->status(),
+                'method' => $built['method'],
+                'path' => $built['path'],
+                'payload' => $built['payload'],
             ],
             $request,
         );
+    }
+
+    /**
+     * Resolve the outgoing API request (method, path, payload) for the given
+     * paid transaction so we can persist & log what we sent.
+     *
+     * Returns null when a precondition fails (e.g. IMEI missing for device extension).
+     *
+     * @return array{method: 'PATCH', path: string, payload: array<string, mixed>}|null
+     */
+    private function buildOutgoingRequest(BillingTransaction $transaction, string|int $externalId): ?array
+    {
+        return match ($transaction->type) {
+            BillingTransactionType::QuotaPurchase => $this->externalApiService->buildIncrementUserQuotaRequest(
+                $externalId,
+                $this->quotaQuantity($transaction),
+            ),
+            BillingTransactionType::DeviceExtension => $this->deviceImei($transaction) === null
+                ? null
+                : $this->externalApiService->buildExtendDeviceExpiryRequest(
+                    $externalId,
+                    (string) $this->deviceImei($transaction),
+                ),
+        };
+    }
+
+    /**
+     * @param  array{method: string, path: string, payload: array<string, mixed>}  $built
+     */
+    private function persistOutgoingRequest(BillingTransaction $transaction, array $built): void
+    {
+        $transaction->update([
+            'fulfillment_endpoint' => $built['path'],
+            'fulfillment_method' => $built['method'],
+            'fulfillment_request' => $built['payload'],
+        ]);
     }
 
     private function quotaQuantity(BillingTransaction $transaction): int
