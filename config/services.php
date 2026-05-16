@@ -41,6 +41,11 @@ return [
         'key' => env('EXTERNAL_API_KEY'),
         'timeout' => (int) env('EXTERNAL_API_TIMEOUT', 10),
         'quota_unit_price' => (int) env('EXTERNAL_QUOTA_UNIT_PRICE', 10_000),
+        // Path endpoint untuk fulfillment otomatis setelah callback paid.
+        // {id} akan diganti dengan external_id user. Path dapat mengandung
+        // placeholder {id} di mana saja (path / query).
+        'quota_fulfillment_path' => env('EXTERNAL_QUOTA_FULFILLMENT_PATH', 'billing/users/{id}/quota'),
+        'device_extension_fulfillment_path' => env('EXTERNAL_DEVICE_EXTENSION_FULFILLMENT_PATH', 'billing/objects/expire'),
     ],
 
 ];

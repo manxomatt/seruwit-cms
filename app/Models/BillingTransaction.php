@@ -30,6 +30,10 @@ class BillingTransaction extends Model
         'paid_at',
         'failed_at',
         'failure_message',
+        'fulfilled_at',
+        'fulfillment_attempts',
+        'fulfillment_error',
+        'fulfillment_response',
     ];
 
     protected static function booted(): void
@@ -52,6 +56,8 @@ class BillingTransaction extends Model
             'meta' => 'array',
             'paid_at' => 'datetime',
             'failed_at' => 'datetime',
+            'fulfilled_at' => 'datetime',
+            'fulfillment_attempts' => 'integer',
         ];
     }
 

@@ -142,6 +142,16 @@ class ExternalApiService
     }
 
     /**
+     * Make a PATCH request to the external API using API key authentication.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function patchWithApiKey(string $path, array $data = []): Response
+    {
+        return $this->clientWithApiKey()->patch($this->url($path), $data);
+    }
+
+    /**
      * Fetch a billing account profile (user + quota) using API key authentication.
      *
      * @param  string|int  $billingUserId  External billing user id (typically {@see User::$external_id}).
@@ -161,6 +171,48 @@ class ExternalApiService
     public function getUsers(array $roles = ['manager', 'user']): Response
     {
         return $this->getWithApiKey('users_api', ['role' => implode(',', $roles)]);
+    }
+
+    /**
+     * Increment the user's object quota in the external system after a
+     * successful quota purchase callback.
+     *
+     * External contract: PATCH /billing/users/{id}/quota with body { "add_to_quota": N }.
+     */
+    public function incrementUserQuota(string|int $billingUserId, int $addToQuota): Response
+    {
+        $template = (string) config('services.external_api.quota_fulfillment_path', 'billing/users/{id}/quota');
+
+        return $this->patchWithApiKey(
+            $this->resolvePath($template, $billingUserId),
+            ['add_to_quota' => $addToQuota],
+        );
+    }
+
+    /**
+     * Extend a device / object active period in the external system after a
+     * successful device extension callback.
+     *
+     * External contract: PATCH /billing/objects/expire with body { imei, user_id }.
+     */
+    public function extendDeviceExpiry(string|int $billingUserId, string $imei): Response
+    {
+        $path = (string) config('services.external_api.device_extension_fulfillment_path', 'billing/objects/expire');
+
+        return $this->patchWithApiKey($path, [
+            'imei' => $imei,
+            'user_id' => is_numeric($billingUserId) ? (int) $billingUserId : $billingUserId,
+        ]);
+    }
+
+    /**
+     * Replace `{id}` placeholder in the configured path with the real external id.
+     */
+    private function resolvePath(string $template, string|int $billingUserId): string
+    {
+        $segment = rawurlencode((string) $billingUserId);
+
+        return str_replace('{id}', $segment, $template);
     }
 
     private function url(string $path): string

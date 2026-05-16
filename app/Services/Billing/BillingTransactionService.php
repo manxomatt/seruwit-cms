@@ -15,6 +15,7 @@ class BillingTransactionService
     public function __construct(
         private readonly BillingActivityLogger $activityLogger,
         private readonly BillingPaidReferralCommissionService $billingPaidReferralCommissionService,
+        private readonly FulfillPaidBillingTransactionService $fulfillPaidBillingTransactionService,
     ) {}
 
     /**
@@ -142,7 +143,9 @@ class BillingTransactionService
                     $request,
                 );
 
-                return $fresh;
+                $this->fulfillPaidBillingTransactionService->fulfill($fresh, $request);
+
+                return $fresh->fresh();
             }
 
             $transaction->update([
