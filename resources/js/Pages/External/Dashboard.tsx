@@ -132,9 +132,8 @@ export default function Dashboard({
     billingQuota,
     billingError,
     quotaCartUrl,
-    deviceExtensionUrl,
-    objectsUrl,
 }: Props): JSX.Element {
+    const showQuotaSection = primaryRole?.slug === 'external_manager';
     const { flash } = usePage<{ flash: Flash }>().props;
 
     return (
@@ -321,7 +320,7 @@ export default function Dashboard({
                             </div>
                         </div>
 
-                        {billingQuota !== null && (
+                        {showQuotaSection && billingQuota !== null && (
                             <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg dark:bg-gray-800">
                                 <div className="flex flex-col gap-4 border-b border-gray-200 px-6 py-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
@@ -331,12 +330,12 @@ export default function Dashboard({
                                         </p>
                                     </div>
                                     <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-                                    <Link
-                                        href={quotaCartUrl}
-                                        className="inline-flex items-center justify-center rounded-md bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 dark:bg-cyan-500 dark:hover:bg-cyan-400"
-                                    >
-                                        Request penambahan kuota
-                                    </Link>
+                                        <Link
+                                            href={quotaCartUrl}
+                                            className="inline-flex items-center justify-center rounded-md bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 dark:bg-cyan-500 dark:hover:bg-cyan-400"
+                                        >
+                                            Request penambahan kuota
+                                        </Link>
                                     </div>
                                 </div>
                                 <div className="grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -351,7 +350,6 @@ export default function Dashboard({
                                 </div>
                             </div>
                         )}
-
                     </>
                 )}
             </div>
