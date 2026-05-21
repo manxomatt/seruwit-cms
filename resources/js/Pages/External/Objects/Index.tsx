@@ -63,6 +63,23 @@ const formatDate = (dateString: string | null): string => {
     });
 };
 
+const isExpired = (dateString: string | null): boolean => {
+    if (!dateString) {
+        return false;
+    }
+    const expireTime = new Date(dateString).getTime();
+    if (Number.isNaN(expireTime)) {
+        return false;
+    }
+    return expireTime < Date.now();
+};
+
+const ExpiredCell = ({ dateString }: { dateString: string | null }): JSX.Element => (
+    <span className={isExpired(dateString) ? 'font-medium text-red-600' : 'text-gray-500'}>
+        {formatDate(dateString)}
+    </span>
+);
+
 const TrialBadge = ({ trial }: { trial: string }) => {
     const isTrial = trial === 'true';
     return (
@@ -315,8 +332,8 @@ export default function Index({ objects, error, externalAppUrl }: Props): JSX.El
                                                 <td className="whitespace-nowrap px-6 py-4">
                                                     <TrialBadge trial={object.trial} />
                                                 </td>
-                                                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                                    {formatDate(object.object_expire_dt)}
+                                                <td className="whitespace-nowrap px-6 py-4 text-sm">
+                                                    <ExpiredCell dateString={object.object_expire_dt} />
                                                 </td>
                                                 <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                                                     {object.device_identifier ? (

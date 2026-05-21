@@ -20,6 +20,7 @@ class StoreDeviceExtensionBillingRequest extends FormRequest
             'device_identifier' => ['required', 'string', 'max:255'],
             'device_label' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'payment_method' => ['nullable', 'string', 'in:gateway,quota'],
         ];
     }
 
@@ -30,6 +31,7 @@ class StoreDeviceExtensionBillingRequest extends FormRequest
     {
         return [
             'device_identifier.required' => 'Identitas perangkat wajib diisi.',
+            'payment_method.in' => 'Metode pembayaran tidak valid.',
         ];
     }
 }
