@@ -5,6 +5,7 @@ namespace Tests\Feature\External;
 use App\Enums\BillingTransactionStatus;
 use App\Enums\BillingTransactionType;
 use App\Models\BillingTransaction;
+use App\Models\QuotaUsageLog;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -159,6 +160,8 @@ class DeviceExtensionBillingTest extends TestCase
 
         $tx = BillingTransaction::query()->where('user_id', $user->id)->firstOrFail();
         $this->assertGreaterThanOrEqual(1, $tx->logs()->count());
+        $this->assertNotNull($tx->invoice_number, 'AwaitingPayment transaction should already have an invoice_number for the penagihan invoice.');
+        $this->assertMatchesRegularExpression('/^INV-\d{6}-\d{4}$/', (string) $tx->invoice_number);
 
         $view = $this->actingAs($user)->get(route('external.quota.waiting-review'));
         $view->assertOk();
@@ -293,6 +296,42 @@ class DeviceExtensionBillingTest extends TestCase
                 && $request->method() === 'PATCH'
                 && ($request->data()['add_to_quota'] ?? null) === -1;
         });
+
+        $log = QuotaUsageLog::query()->where('user_id', $manager->id)->firstOrFail();
+        $this->assertSame('IMEI-EXTEND', $log->device_identifier);
+        $this->assertSame('Quota truck', $log->device_label);
+        $this->assertSame(1, $log->quota_used);
+        $this->assertSame(4, $log->quota_before);
+        $this->assertSame(3, $log->quota_after);
+        $this->assertSame($tx->id, $log->billing_transaction_id);
+
+        $this->assertNotNull($tx->invoice_number);
+        $this->assertMatchesRegularExpression('/^INV-\d{6}-\d{4}$/', (string) $tx->invoice_number);
+    }
+
+    public function test_manager_quota_usage_log_is_not_recorded_when_quota_decrement_fails(): void
+    {
+        $this->configureExternalApi();
+        $manager = $this->makeExternalManager('mgr-fail');
+
+        Http::fake([
+            'api.example.test/api/billing/users/mgr-fail' => Http::response([
+                'success' => true,
+                'user' => ['id' => 1],
+                'quota' => ['objects_remaining' => 2],
+            ], 200),
+            'api.example.test/api/billing/objects/expire' => Http::response(['ok' => true], 200),
+            'api.example.test/api/billing/users/mgr-fail/quota' => Http::response(['ok' => false], 500),
+        ]);
+
+        $response = $this->actingAs($manager)->post(route('external.billing.device-extension.confirm.store'), [
+            'device_identifier' => 'IMEI-FAIL',
+            'payment_method' => 'quota',
+        ]);
+
+        $response->assertRedirect(route('external.objects.index'));
+
+        $this->assertSame(0, QuotaUsageLog::query()->where('user_id', $manager->id)->count());
     }
 
     public function test_manager_cannot_extend_device_using_quota_when_no_remaining_slots(): void

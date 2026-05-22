@@ -37,6 +37,7 @@ class BillingTransaction extends Model
         'fulfillment_endpoint',
         'fulfillment_method',
         'fulfillment_request',
+        'invoice_number',
     ];
 
     protected static function booted(): void

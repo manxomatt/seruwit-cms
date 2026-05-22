@@ -72,6 +72,10 @@ class WaitingReviewTest extends TestCase
             'user_id' => $user->id,
             'amount' => 50_000,
         ]);
+
+        $tx = \App\Models\BillingTransaction::query()->where('user_id', $user->id)->firstOrFail();
+        $this->assertNotNull($tx->invoice_number, 'QuotaPurchase AwaitingPayment should already have an invoice_number for the penagihan invoice.');
+        $this->assertMatchesRegularExpression('/^INV-\d{6}-\d{4}$/', (string) $tx->invoice_number);
     }
 
     public function test_show_redirects_when_visit_flag_missing(): void

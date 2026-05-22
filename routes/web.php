@@ -6,6 +6,7 @@ use App\Http\Controllers\AccountManager\DownlineAssignmentController as AccountM
 use App\Http\Controllers\AccountManager\DownlineController as AccountManagerDownlineController;
 use App\Http\Controllers\AccountManager\PayoutController as AccountManagerPayoutController;
 use App\Http\Controllers\Admin\ReferralApprovalController;
+use App\Http\Controllers\Billing\InvoiceController as BillingInvoiceController;
 use App\Http\Controllers\Billing\PaymentCallbackController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\External\BillingTransactionHistoryController as ExternalBillingTransactionHistoryController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\External\DeviceExtensionBillingController as ExternalDe
 use App\Http\Controllers\External\ObjectController as ExternalObjectController;
 use App\Http\Controllers\External\QuotaCartController as ExternalQuotaCartController;
 use App\Http\Controllers\External\QuotaReviewController as ExternalQuotaReviewController;
+use App\Http\Controllers\External\QuotaUsageHistoryController as ExternalQuotaUsageHistoryController;
 use App\Http\Controllers\External\UserController as ExternalUserController;
 use App\Http\Controllers\External\WaitingReviewController as ExternalWaitingReviewController;
 use App\Http\Controllers\LiveUpdateController;
@@ -93,6 +95,14 @@ Route::post('/external/billing/device-extension', [ExternalDeviceExtensionBillin
 Route::get('/external/billing/transactions', [ExternalBillingTransactionHistoryController::class, 'index'])
     ->middleware(['auth'])
     ->name('external.billing.transactions.index');
+
+Route::get('/external/quota/usage-history', [ExternalQuotaUsageHistoryController::class, 'index'])
+    ->middleware(['auth'])
+    ->name('external.quota.usage-history');
+
+Route::get('/billing/invoices/{billingTransaction}/download', [BillingInvoiceController::class, 'download'])
+    ->middleware(['auth'])
+    ->name('billing.invoices.download');
 
 // Account Manager dashboard
 Route::get('/account-manager/dashboard', [AccountManagerDashboardController::class, 'index'])

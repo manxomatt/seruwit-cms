@@ -5,6 +5,7 @@ namespace App\Services\Billing;
 use App\Enums\BillingTransactionStatus;
 use App\Enums\BillingTransactionType;
 use App\Models\BillingTransaction;
+use App\Models\QuotaUsageLog;
 use App\Models\User;
 use App\Services\ExternalApiService;
 use App\Services\Referral\BillingPaidReferralCommissionService;
@@ -19,6 +20,7 @@ class BillingTransactionService
         private readonly BillingPaidReferralCommissionService $billingPaidReferralCommissionService,
         private readonly FulfillPaidBillingTransactionService $fulfillPaidBillingTransactionService,
         private readonly ExternalApiService $externalApiService,
+        private readonly InvoiceNumberGenerator $invoiceNumberGenerator,
     ) {}
 
     /**
@@ -43,6 +45,8 @@ class BillingTransactionService
             return $transaction;
         });
 
+        $this->invoiceNumberGenerator->assign($transaction);
+
         $this->activityLogger->log(
             $transaction,
             'transaction.created',
@@ -51,6 +55,7 @@ class BillingTransactionService
                 'type' => $transaction->type->value,
                 'amount' => $transaction->amount,
                 'quantity' => $checkout['quantity'],
+                'invoice_number' => $transaction->invoice_number,
             ],
         );
 
@@ -74,6 +79,8 @@ class BillingTransactionService
             ]);
         });
 
+        $this->invoiceNumberGenerator->assign($transaction);
+
         $this->activityLogger->log(
             $transaction,
             'transaction.created',
@@ -81,6 +88,7 @@ class BillingTransactionService
             [
                 'type' => $transaction->type->value,
                 'amount' => $transaction->amount,
+                'invoice_number' => $transaction->invoice_number,
             ],
         );
 
@@ -95,9 +103,13 @@ class BillingTransactionService
      * `payment_method=quota` in its meta, fulfills the device extension
      * against the external API, then decrements the manager's quota by 1.
      *
+     * When the extension is successfully fulfilled and the manager's quota
+     * is decremented, a {@see QuotaUsageLog} row is persisted so the manager
+     * can review their quota usage history.
+     *
      * @param  array<string, mixed>  $meta
      */
-    public function createDeviceExtensionViaQuota(User $user, array $meta = []): BillingTransaction
+    public function createDeviceExtensionViaQuota(User $user, array $meta = [], ?int $quotaBefore = null): BillingTransaction
     {
         $transaction = DB::transaction(function () use ($user, $meta): BillingTransaction {
             return BillingTransaction::query()->create([
@@ -112,6 +124,8 @@ class BillingTransactionService
             ]);
         });
 
+        $this->invoiceNumberGenerator->assign($transaction);
+
         $this->activityLogger->log(
             $transaction,
             'transaction.created',
@@ -120,6 +134,7 @@ class BillingTransactionService
                 'type' => $transaction->type->value,
                 'amount' => $transaction->amount,
                 'payment_method' => 'quota',
+                'invoice_number' => $transaction->invoice_number,
             ],
         );
 
@@ -128,13 +143,17 @@ class BillingTransactionService
         $fresh = $transaction->fresh();
 
         if ($fresh !== null && $fresh->fulfilled_at !== null) {
-            $this->decrementManagerQuota($fresh);
+            $decremented = $this->decrementManagerQuota($fresh);
+
+            if ($decremented) {
+                $this->recordQuotaUsageLog($user, $fresh, $meta, $quotaBefore);
+            }
         }
 
         return $fresh ?? $transaction;
     }
 
-    private function decrementManagerQuota(BillingTransaction $transaction): void
+    private function decrementManagerQuota(BillingTransaction $transaction): bool
     {
         $externalId = $transaction->user()->first()?->external_id;
 
@@ -145,7 +164,7 @@ class BillingTransactionService
                 'Pengurangan kuota dilewati: external ID user tidak tersedia.',
             );
 
-            return;
+            return false;
         }
 
         try {
@@ -157,7 +176,7 @@ class BillingTransactionService
                 'Gagal menghubungi external API saat memotong kuota: '.$e->getMessage(),
             );
 
-            return;
+            return false;
         }
 
         if (! $response->successful()) {
@@ -168,7 +187,7 @@ class BillingTransactionService
                 ['status_code' => $response->status()],
             );
 
-            return;
+            return false;
         }
 
         $this->activityLogger->log(
@@ -177,6 +196,29 @@ class BillingTransactionService
             'Kuota manager berhasil dipotong 1 unit untuk perpanjangan ini.',
             ['add_to_quota' => -1],
         );
+
+        return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $meta
+     */
+    private function recordQuotaUsageLog(
+        User $user,
+        BillingTransaction $transaction,
+        array $meta,
+        ?int $quotaBefore,
+    ): void {
+        QuotaUsageLog::query()->create([
+            'user_id' => $user->id,
+            'billing_transaction_id' => $transaction->id,
+            'device_identifier' => (string) ($meta['device_identifier'] ?? ''),
+            'device_label' => isset($meta['device_label']) ? (string) $meta['device_label'] : null,
+            'quota_used' => 1,
+            'quota_before' => $quotaBefore,
+            'quota_after' => $quotaBefore !== null ? max($quotaBefore - 1, 0) : null,
+            'notes' => isset($meta['notes']) ? (string) $meta['notes'] : null,
+        ]);
     }
 
     /**
@@ -226,6 +268,8 @@ class BillingTransactionService
                     'failed_at' => null,
                     'failure_message' => null,
                 ]);
+
+                $this->invoiceNumberGenerator->assign($transaction);
 
                 $fresh = $transaction->fresh();
                 $this->billingPaidReferralCommissionService->creditFromPaidBilling($fresh);

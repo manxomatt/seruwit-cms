@@ -4,6 +4,7 @@ import { Head, Link } from '@inertiajs/react';
 interface TransactionRow {
     id: number;
     reference: string;
+    invoice_number: string | null;
     type: string;
     type_label: string;
     status: string;
@@ -15,6 +16,8 @@ interface TransactionRow {
     paid_at: string | null;
     failed_at: string | null;
     created_at: string | null;
+    invoice_penagihan_url: string | null;
+    invoice_lunas_url: string | null;
 }
 
 interface PaginatorLink {
@@ -102,7 +105,7 @@ export default function TransactionHistory({ transactions }: Props): JSX.Element
                         <thead className="bg-gray-50 dark:bg-gray-900/50">
                             <tr>
                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                    Referensi
+                                    Invoice / Referensi
                                 </th>
                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                     Jenis
@@ -119,20 +122,28 @@ export default function TransactionHistory({ transactions }: Props): JSX.Element
                                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                     Dibayar
                                 </th>
+                                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    Invoice
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-700 dark:bg-gray-800">
                             {transactions.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
                                         Belum ada transaksi billing.
                                     </td>
                                 </tr>
                             ) : (
                                 transactions.data.map((row) => (
                                     <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                        <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-gray-900 dark:text-gray-100">
-                                            {row.reference}
+                                        <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-900 dark:text-gray-100">
+                                            {row.invoice_number !== null ? (
+                                                <div className="font-semibold">{row.invoice_number}</div>
+                                            ) : null}
+                                            <div className="font-mono text-[11px] text-gray-500 dark:text-gray-400">
+                                                {row.reference}
+                                            </div>
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-200">{row.type_label}</td>
                                         <td className="whitespace-nowrap px-4 py-3">
@@ -150,6 +161,31 @@ export default function TransactionHistory({ transactions }: Props): JSX.Element
                                         </td>
                                         <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                                             {formatDateTime(row.paid_at)}
+                                        </td>
+                                        <td className="whitespace-nowrap px-4 py-3 text-right">
+                                            {row.invoice_lunas_url !== null ? (
+                                                <a
+                                                    href={row.invoice_lunas_url}
+                                                    className="inline-flex items-center gap-1 rounded-md border border-emerald-500 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50 dark:border-emerald-400 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
+                                                >
+                                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                                    </svg>
+                                                    Lunas
+                                                </a>
+                                            ) : row.invoice_penagihan_url !== null ? (
+                                                <a
+                                                    href={row.invoice_penagihan_url}
+                                                    className="inline-flex items-center gap-1 rounded-md border border-amber-500 px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:border-amber-400 dark:text-amber-300 dark:hover:bg-amber-900/30"
+                                                >
+                                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                                    </svg>
+                                                    Penagihan
+                                                </a>
+                                            ) : (
+                                                <span className="text-xs text-gray-400">—</span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

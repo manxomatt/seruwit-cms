@@ -135,6 +135,7 @@ class DeviceExtensionBillingController extends Controller
                 'device_label' => $request->validated('device_label'),
                 'notes' => $request->validated('notes'),
             ],
+            $remaining,
         );
 
         return redirect()

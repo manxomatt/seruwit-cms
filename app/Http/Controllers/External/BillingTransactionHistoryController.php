@@ -21,6 +21,7 @@ class BillingTransactionHistoryController extends Controller
             ->through(fn (BillingTransaction $transaction): array => [
                 'id' => $transaction->id,
                 'reference' => $transaction->reference,
+                'invoice_number' => $transaction->invoice_number,
                 'type' => $transaction->type->value,
                 'type_label' => $this->typeLabel($transaction->type),
                 'status' => $transaction->status->value,
@@ -32,6 +33,15 @@ class BillingTransactionHistoryController extends Controller
                 'paid_at' => $transaction->paid_at?->toIso8601String(),
                 'failed_at' => $transaction->failed_at?->toIso8601String(),
                 'created_at' => $transaction->created_at?->toIso8601String(),
+                'invoice_penagihan_url' => in_array($transaction->status, [
+                    BillingTransactionStatus::AwaitingPayment,
+                    BillingTransactionStatus::Paid,
+                ], true)
+                    ? route('billing.invoices.download', ['billingTransaction' => $transaction, 'type' => 'penagihan'])
+                    : null,
+                'invoice_lunas_url' => $transaction->status === BillingTransactionStatus::Paid
+                    ? route('billing.invoices.download', ['billingTransaction' => $transaction, 'type' => 'lunas'])
+                    : null,
             ]);
 
         return Inertia::render('External/Billing/TransactionHistory', [

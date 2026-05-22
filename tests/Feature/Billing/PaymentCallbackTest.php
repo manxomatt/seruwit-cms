@@ -58,6 +58,9 @@ class PaymentCallbackTest extends TestCase
         ]);
 
         $this->assertGreaterThanOrEqual(2, $transaction->fresh()->logs()->count());
+
+        $this->assertNotNull($transaction->fresh()->invoice_number);
+        $this->assertMatchesRegularExpression('/^INV-\d{6}-\d{4}$/', (string) $transaction->fresh()->invoice_number);
     }
 
     public function test_paid_callback_credits_account_manager_wallet_when_referral_is_approved(): void

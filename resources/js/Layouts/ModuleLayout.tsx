@@ -407,6 +407,19 @@ export default function ModuleLayout({ header, children }: Props) {
             });
         }
 
+        if (
+            user?.primary_role_slug === 'external_manager'
+            && routeExists('external.quota.usage-history')
+        ) {
+            items.push({
+                name: 'Riwayat penggunaan kuota',
+                href: route('external.quota.usage-history'),
+                icon: <HistoryMenuIcon />,
+                current: route().current('external.quota.usage-history*'),
+                module: 'external-quota-usage-history',
+            });
+        }
+
         // Account Manager: add downline management
         if (user?.primary_role_slug === 'account_manager' && routeExists('account-manager.downlines.index')) {
             items.push({
