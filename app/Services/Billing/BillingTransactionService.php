@@ -167,8 +167,21 @@ class BillingTransactionService
             return false;
         }
 
+        $imei = $this->resolveImei($transaction);
+        $built = $this->externalApiService->buildIncrementUserQuotaRequest(
+            $externalId,
+            -1,
+            $transaction->id,
+            $imei,
+        );
+
         try {
-            $response = $this->externalApiService->incrementUserQuota($externalId, -1);
+            $response = $this->externalApiService->incrementUserQuota(
+                $externalId,
+                -1,
+                $transaction->id,
+                $imei,
+            );
         } catch (Throwable $e) {
             $this->activityLogger->log(
                 $transaction,
@@ -190,14 +203,32 @@ class BillingTransactionService
             return false;
         }
 
+        $transaction->update([
+            'fulfillment_endpoint' => $built['path'],
+            'fulfillment_method' => $built['method'],
+            'fulfillment_request' => $built['payload'],
+        ]);
+
         $this->activityLogger->log(
-            $transaction,
+            $transaction->fresh(),
             'quota.decremented',
             'Kuota manager berhasil dipotong 1 unit untuk perpanjangan ini.',
-            ['add_to_quota' => -1],
+            $built['payload'],
         );
 
         return true;
+    }
+
+    private function resolveImei(BillingTransaction $transaction): ?string
+    {
+        $meta = $transaction->meta ?? [];
+        $imei = $meta['imei'] ?? $meta['device_identifier'] ?? null;
+
+        if (! is_string($imei) || trim($imei) === '') {
+            return null;
+        }
+
+        return trim($imei);
     }
 
     /**

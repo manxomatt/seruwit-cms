@@ -5,6 +5,7 @@ namespace Tests\Feature\External;
 use App\Enums\BillingTransactionStatus;
 use App\Enums\BillingTransactionType;
 use App\Models\BillingTransaction;
+use App\Models\BillingTransactionLog;
 use App\Models\QuotaUsageLog;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
@@ -291,10 +292,14 @@ class DeviceExtensionBillingTest extends TestCase
                 && ($request->data()['imei'] ?? null) === 'IMEI-EXTEND';
         });
 
-        Http::assertSent(function ($request): bool {
+        Http::assertSent(function ($request) use ($tx): bool {
+            $body = $request->data();
+
             return str_contains($request->url(), '/billing/users/mgr-9/quota')
                 && $request->method() === 'PATCH'
-                && ($request->data()['add_to_quota'] ?? null) === -1;
+                && ($body['add_to_quota'] ?? null) === -1
+                && ($body['billing_transaction_id'] ?? null) === $tx->id
+                && ($body['imei'] ?? null) === 'IMEI-EXTEND';
         });
 
         $log = QuotaUsageLog::query()->where('user_id', $manager->id)->firstOrFail();
@@ -304,6 +309,24 @@ class DeviceExtensionBillingTest extends TestCase
         $this->assertSame(4, $log->quota_before);
         $this->assertSame(3, $log->quota_after);
         $this->assertSame($tx->id, $log->billing_transaction_id);
+
+        $this->assertSame('billing/users/mgr-9/quota', $tx->fulfillment_endpoint);
+        $this->assertSame('PATCH', $tx->fulfillment_method);
+        $this->assertSame([
+            'add_to_quota' => -1,
+            'billing_transaction_id' => $tx->id,
+            'imei' => 'IMEI-EXTEND',
+        ], $tx->fulfillment_request);
+
+        $decrementLog = BillingTransactionLog::query()
+            ->where('billing_transaction_id', $tx->id)
+            ->where('action', 'quota.decremented')
+            ->firstOrFail();
+        $this->assertSame([
+            'add_to_quota' => -1,
+            'billing_transaction_id' => $tx->id,
+            'imei' => 'IMEI-EXTEND',
+        ], $decrementLog->context);
 
         $this->assertNotNull($tx->invoice_number);
         $this->assertMatchesRegularExpression('/^INV-\d{6}-\d{4}$/', (string) $tx->invoice_number);
