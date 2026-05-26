@@ -190,16 +190,35 @@ class ExternalApiService
     /**
      * Build the request payload for incrementing a user's quota.
      *
+     * `$billingTransactionId` and `$imei` are only meaningful when the quota
+     * change represents a device expiry extension paid with the manager's
+     * quota; the external API uses them to record the underlying transaction
+     * and extend the corresponding object.
+     *
      * @return array{method: 'PATCH', path: string, payload: array<string, mixed>}
      */
-    public function buildIncrementUserQuotaRequest(string|int $billingUserId, int $addToQuota): array
-    {
+    public function buildIncrementUserQuotaRequest(
+        string|int $billingUserId,
+        int $addToQuota,
+        ?int $billingTransactionId = null,
+        ?string $imei = null,
+    ): array {
         $template = (string) config('services.external_api.quota_fulfillment_path', 'billing/users/{id}/quota');
+
+        $payload = ['add_to_quota' => $addToQuota];
+
+        if ($billingTransactionId !== null) {
+            $payload['billing_transaction_id'] = $billingTransactionId;
+        }
+
+        if ($imei !== null && $imei !== '') {
+            $payload['imei'] = $imei;
+        }
 
         return [
             'method' => 'PATCH',
             'path' => $this->resolvePath($template, $billingUserId),
-            'payload' => ['add_to_quota' => $addToQuota],
+            'payload' => $payload,
         ];
     }
 
@@ -207,11 +226,18 @@ class ExternalApiService
      * Increment the user's object quota in the external system after a
      * successful quota purchase callback.
      *
-     * External contract: PATCH /billing/users/{id}/quota with body { "add_to_quota": N }.
+     * External contract: PATCH /billing/users/{id}/quota with body
+     * { "add_to_quota": N, "billing_transaction_id"?: int, "imei"?: string }.
+     * The optional fields are only sent for device-expiry extensions paid
+     * with quota.
      */
-    public function incrementUserQuota(string|int $billingUserId, int $addToQuota): Response
-    {
-        $request = $this->buildIncrementUserQuotaRequest($billingUserId, $addToQuota);
+    public function incrementUserQuota(
+        string|int $billingUserId,
+        int $addToQuota,
+        ?int $billingTransactionId = null,
+        ?string $imei = null,
+    ): Response {
+        $request = $this->buildIncrementUserQuotaRequest($billingUserId, $addToQuota, $billingTransactionId, $imei);
 
         return $this->patchWithApiKey($request['path'], $request['payload']);
     }
