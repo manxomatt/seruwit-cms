@@ -78,7 +78,7 @@ Route::get('/external/quota/waiting-review', [ExternalWaitingReviewController::c
 
 Route::get('/external/billing/device-extension/confirm', [ExternalDeviceExtensionBillingController::class, 'confirm'])
     ->middleware(['auth'])
-    ->name('external.billing.device-extension.confirm');
+    ->name('external.billing.device-/quotaextension.confirm');
 
 Route::post('/external/billing/device-extension/confirm', [ExternalDeviceExtensionBillingController::class, 'confirmStore'])
     ->middleware(['auth'])

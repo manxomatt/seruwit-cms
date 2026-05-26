@@ -188,6 +188,20 @@ class ExternalApiService
     }
 
     /**
+     * List a user's quota transaction history (consumed / added / set events).
+     *
+     * External contract: GET /billing/quota-transactions?user_id=<id>&page=<n>&per_page=<n>.
+     */
+    public function listBillingQuotaTransactions(string|int $userId, int $page = 1, int $perPage = 50): Response
+    {
+        return $this->getWithApiKey('billing/quota-transactions', [
+            'user_id' => is_numeric($userId) ? (int) $userId : $userId,
+            'page' => $page,
+            'per_page' => $perPage,
+        ]);
+    }
+
+    /**
      * Build the request payload for incrementing a user's quota.
      *
      * `$billingTransactionId` and `$imei` are only meaningful when the quota
