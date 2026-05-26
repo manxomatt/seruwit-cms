@@ -67,12 +67,13 @@ class QuotaUsageHistoryController extends Controller
             Log::warning('External API /billing/quota-transactions non-200 response', [
                 'status' => $response->status(),
                 'user_id' => $externalId,
+                'body' => $response->body(),
             ]);
 
             return Inertia::render('External/Quota/UsageHistory', [
                 'logs' => $this->emptyPaginator($request),
                 'dashboardUrl' => route('external.dashboard'),
-                'error' => 'Gagal mengambil riwayat kuota dari sistem eksternal.',
+                'error' => $this->formatApiError($response->status(), $response->json(), $response->body()),
             ]);
         }
 
@@ -161,6 +162,53 @@ class QuotaUsageHistoryController extends Controller
                 ? route('billing.invoices.download', ['billingTransaction' => $billingTransactionId, 'type' => 'lunas'])
                 : null,
         ];
+    }
+
+    /**
+     * Build a user-visible message from a non-2xx external API response.
+     *
+     * Tries common error keys (message/error/detail) when the body is JSON;
+     * falls back to a snippet of the raw body so the operator can still see
+     * what the upstream actually returned.
+     *
+     * @param  mixed  $json
+     */
+    private function formatApiError(int $status, $json, string $rawBody): string
+    {
+        $detail = null;
+
+        if (is_array($json)) {
+            foreach (['message', 'error', 'error_message', 'detail', 'errors'] as $key) {
+                if (! array_key_exists($key, $json)) {
+                    continue;
+                }
+
+                $value = $json[$key];
+
+                if (is_string($value) && trim($value) !== '') {
+                    $detail = trim($value);
+                    break;
+                }
+
+                if (is_array($value) && $value !== []) {
+                    $detail = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    break;
+                }
+            }
+        }
+
+        if ($detail === null) {
+            $trimmed = trim($rawBody);
+            if ($trimmed !== '') {
+                $detail = mb_substr($trimmed, 0, 500);
+            }
+        }
+
+        $base = sprintf('Sistem eksternal merespon status %d.', $status);
+
+        return $detail !== null
+            ? $base.' '.$detail
+            : $base.' Tidak ada detail tambahan.';
     }
 
     /**

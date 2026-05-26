@@ -207,12 +207,15 @@ class QuotaUsageHistoryTest extends TestCase
         Http::assertSent(fn ($request): bool => (int) ($request->data()['page'] ?? 0) === 3);
     }
 
-    public function test_renders_error_when_external_api_returns_non_200(): void
+    public function test_renders_error_with_external_api_detail_when_non_200(): void
     {
         $manager = $this->makeManager('mgr-16');
 
         Http::fake([
-            'api.example.test/api/billing/quota-transactions*' => Http::response(['error' => 'boom'], 500),
+            'api.example.test/api/billing/quota-transactions*' => Http::response([
+                'success' => false,
+                'message' => 'User not found for billing scope',
+            ], 404),
         ]);
 
         $response = $this->actingAs($manager)->get(route('external.quota.usage-history'));
@@ -220,7 +223,43 @@ class QuotaUsageHistoryTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->has('logs.data', 0)
-            ->where('error', 'Gagal mengambil riwayat kuota dari sistem eksternal.')
+            ->where('error', 'Sistem eksternal merespon status 404. User not found for billing scope')
+        );
+    }
+
+    public function test_renders_error_with_raw_body_when_non_json_response(): void
+    {
+        $manager = $this->makeManager('mgr-16');
+
+        Http::fake([
+            'api.example.test/api/billing/quota-transactions*' => Http::response('Internal Server Error', 500),
+        ]);
+
+        $response = $this->actingAs($manager)->get(route('external.quota.usage-history'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->has('logs.data', 0)
+            ->where('error', 'Sistem eksternal merespon status 500. Internal Server Error')
+        );
+    }
+
+    public function test_renders_error_with_errors_array_when_present(): void
+    {
+        $manager = $this->makeManager('mgr-16');
+
+        Http::fake([
+            'api.example.test/api/billing/quota-transactions*' => Http::response([
+                'errors' => ['user_id' => ['The user_id field is required.']],
+            ], 422),
+        ]);
+
+        $response = $this->actingAs($manager)->get(route('external.quota.usage-history'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->has('logs.data', 0)
+            ->where('error', 'Sistem eksternal merespon status 422. {"user_id":["The user_id field is required."]}')
         );
     }
 
