@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services;
 
+use App\Enums\TrialConvertMode;
 use App\Services\ExternalApiService;
 use Tests\TestCase;
 
@@ -74,6 +75,36 @@ class ExternalApiServiceTest extends TestCase
         $this->assertSame([
             'add_to_quota' => -1,
             'imei' => 'IMEI-XYZ',
+        ], $built['payload']);
+    }
+
+    public function test_build_extend_device_expiry_request_for_billing_payment_includes_transaction_id(): void
+    {
+        config(['services.external_api.device_extension_fulfillment_path' => 'billing/objects/expire']);
+
+        $built = $this->service()->buildExtendDeviceExpiryRequest('16', 'IMEI-123', TrialConvertMode::BillingPayment, 12345);
+
+        $this->assertSame('PATCH', $built['method']);
+        $this->assertSame('billing/objects/expire', $built['path']);
+        $this->assertSame([
+            'imei' => 'IMEI-123',
+            'user_id' => 16,
+            'trial_convert_mode' => 'billing_payment',
+            'billing_transaction_id' => 12345,
+        ], $built['payload']);
+    }
+
+    public function test_build_extend_device_expiry_request_for_existing_quota_omits_transaction_id(): void
+    {
+        config(['services.external_api.device_extension_fulfillment_path' => 'billing/objects/expire']);
+
+        $built = $this->service()->buildExtendDeviceExpiryRequest('16', 'IMEI-123', TrialConvertMode::ExistingQuota, 12345);
+
+        $this->assertArrayNotHasKey('billing_transaction_id', $built['payload']);
+        $this->assertSame([
+            'imei' => 'IMEI-123',
+            'user_id' => 16,
+            'trial_convert_mode' => 'existing_quota',
         ], $built['payload']);
     }
 }

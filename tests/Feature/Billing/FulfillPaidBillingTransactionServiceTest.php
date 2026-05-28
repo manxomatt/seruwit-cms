@@ -96,14 +96,16 @@ class FulfillPaidBillingTransactionServiceTest extends TestCase
 
         $this->service()->fulfill($transaction);
 
-        Http::assertSent(function ($request): bool {
+        Http::assertSent(function ($request) use ($transaction): bool {
             $body = $request->data();
 
             return $request->url() === 'https://api.example.test/api/billing/objects/expire'
                 && $request->method() === 'PATCH'
                 && $request->hasHeader('X-Api-Key', 'test-api-key')
                 && ($body['imei'] ?? null) === '350000000000001'
-                && ($body['user_id'] ?? null) === 999;
+                && ($body['user_id'] ?? null) === 999
+                && ($body['trial_convert_mode'] ?? null) === 'billing_payment'
+                && ($body['billing_transaction_id'] ?? null) === $transaction->id;
         });
 
         $fresh = $transaction->fresh();
@@ -111,7 +113,12 @@ class FulfillPaidBillingTransactionServiceTest extends TestCase
         $this->assertSame('PATCH', $fresh->fulfillment_method);
         $this->assertSame('billing/objects/expire', $fresh->fulfillment_endpoint);
         $this->assertSame(
-            ['imei' => '350000000000001', 'user_id' => 999],
+            [
+                'imei' => '350000000000001',
+                'user_id' => 999,
+                'trial_convert_mode' => 'billing_payment',
+                'billing_transaction_id' => $transaction->id,
+            ],
             $fresh->fulfillment_request,
         );
     }

@@ -287,9 +287,13 @@ class DeviceExtensionBillingTest extends TestCase
         $this->assertNotNull($tx->fulfilled_at);
 
         Http::assertSent(function ($request): bool {
+            $body = $request->data();
+
             return str_contains($request->url(), '/billing/objects/expire')
                 && $request->method() === 'PATCH'
-                && ($request->data()['imei'] ?? null) === 'IMEI-EXTEND';
+                && ($body['imei'] ?? null) === 'IMEI-EXTEND'
+                && ($body['trial_convert_mode'] ?? null) === 'existing_quota'
+                && ! array_key_exists('billing_transaction_id', $body);
         });
 
         Http::assertSent(function ($request) use ($tx): bool {

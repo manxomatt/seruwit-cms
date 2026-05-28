@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Actions\Auth\LoginAction;
+use App\Enums\TrialConvertMode;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -259,19 +260,34 @@ class ExternalApiService
     /**
      * Build the request payload for extending a device's expiry.
      *
+     * A trial object is converted to full on extension. `$trialConvertMode`
+     * tells the external system how the conversion is paid for, and
+     * `billing_transaction_id` is only sent for the gateway-paid variant.
+     *
      * @return array{method: 'PATCH', path: string, payload: array<string, mixed>}
      */
-    public function buildExtendDeviceExpiryRequest(string|int $billingUserId, string $imei): array
-    {
+    public function buildExtendDeviceExpiryRequest(
+        string|int $billingUserId,
+        string $imei,
+        TrialConvertMode $trialConvertMode,
+        ?int $billingTransactionId = null,
+    ): array {
         $path = (string) config('services.external_api.device_extension_fulfillment_path', 'billing/objects/expire');
+
+        $payload = [
+            'imei' => $imei,
+            'user_id' => is_numeric($billingUserId) ? (int) $billingUserId : $billingUserId,
+            'trial_convert_mode' => $trialConvertMode->value,
+        ];
+
+        if ($trialConvertMode === TrialConvertMode::BillingPayment && $billingTransactionId !== null) {
+            $payload['billing_transaction_id'] = $billingTransactionId;
+        }
 
         return [
             'method' => 'PATCH',
             'path' => $path,
-            'payload' => [
-                'imei' => $imei,
-                'user_id' => is_numeric($billingUserId) ? (int) $billingUserId : $billingUserId,
-            ],
+            'payload' => $payload,
         ];
     }
 
@@ -279,11 +295,17 @@ class ExternalApiService
      * Extend a device / object active period in the external system after a
      * successful device extension callback.
      *
-     * External contract: PATCH /billing/objects/expire with body { imei, user_id }.
+     * External contract: PATCH /billing/objects/expire with body
+     * { imei, user_id, trial_convert_mode, billing_transaction_id? }.
+     * `billing_transaction_id` is only sent when paid through the gateway.
      */
-    public function extendDeviceExpiry(string|int $billingUserId, string $imei): Response
-    {
-        $request = $this->buildExtendDeviceExpiryRequest($billingUserId, $imei);
+    public function extendDeviceExpiry(
+        string|int $billingUserId,
+        string $imei,
+        TrialConvertMode $trialConvertMode,
+        ?int $billingTransactionId = null,
+    ): Response {
+        $request = $this->buildExtendDeviceExpiryRequest($billingUserId, $imei, $trialConvertMode, $billingTransactionId);
 
         return $this->patchWithApiKey($request['path'], $request['payload']);
     }

@@ -4,6 +4,7 @@ namespace App\Services\Billing;
 
 use App\Enums\BillingTransactionStatus;
 use App\Enums\BillingTransactionType;
+use App\Enums\TrialConvertMode;
 use App\Models\BillingTransaction;
 use App\Services\ExternalApiService;
 use Illuminate\Http\Client\Response;
@@ -88,6 +89,8 @@ class FulfillPaidBillingTransactionService
                 BillingTransactionType::DeviceExtension => $this->externalApiService->extendDeviceExpiry(
                     $externalId,
                     (string) $this->deviceImei($transaction),
+                    $this->trialConvertMode($transaction),
+                    $transaction->id,
                 ),
             };
         } catch (Throwable $e) {
@@ -154,8 +157,23 @@ class FulfillPaidBillingTransactionService
                 : $this->externalApiService->buildExtendDeviceExpiryRequest(
                     $externalId,
                     (string) $this->deviceImei($transaction),
+                    $this->trialConvertMode($transaction),
+                    $transaction->id,
                 ),
         };
+    }
+
+    /**
+     * Determine how a trial-to-full conversion is paid for: deducting the
+     * manager's existing quota or charging through the payment gateway.
+     */
+    private function trialConvertMode(BillingTransaction $transaction): TrialConvertMode
+    {
+        $paymentMethod = $transaction->meta['payment_method'] ?? null;
+
+        return $paymentMethod === 'quota'
+            ? TrialConvertMode::ExistingQuota
+            : TrialConvertMode::BillingPayment;
     }
 
     /**
